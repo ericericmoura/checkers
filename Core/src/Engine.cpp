@@ -7,7 +7,7 @@
 #include <SFML/Window/Event.hpp>
 #include <SFML/System/Clock.hpp>
 
-#include "Core/Debugging/Logger.h"
+#include "Core/Debugging/Logging.h"
 
 Core::Engine::Engine(const EngineSpecification& engine_specification)
 	: specification_(engine_specification)

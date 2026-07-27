@@ -32,7 +32,7 @@ void LogError(fmt::format_string<Args...> format, Args&&... args)
 template <typename... Args>
 void LogDebugImpl(fmt::format_string<Args...> format, Args&&... args)
 {
-    fmt::print(fg(fmt::color::red) | fmt::emphasis::bold,
+    fmt::print(fg(fmt::color::ghost_white) | fmt::emphasis::italic,
         "\nDEBUG: {}", fmt::format(format, std::forward<Args>(args)...));
 }
 

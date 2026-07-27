@@ -36,6 +36,8 @@ void Core::Engine::Run()
 				window_.close();
 			}
 		}
+		auto delta = time_.restart().asSeconds();
+
 		window_.clear(specification_.window_specification_.background_color_);
 		window_.display();
 	}

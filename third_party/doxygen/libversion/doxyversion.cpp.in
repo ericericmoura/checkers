@@ -1,0 +1,6 @@
+#include "version.h"
+
+std::string getDoxygenVersion()
+{
+  return "@DOXYGEN_VERSION@";
+}

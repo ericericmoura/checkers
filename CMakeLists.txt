@@ -1,7 +1,33 @@
-cmake_minimum_required(VERSION 3.28)
-project(CMakeSFMLProject LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.13)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_CXX_STANDARD 23)
+
+#! ! ! ! ! ! !
+#set this to true to ship the game!
+#basically this will change the RESOURCES_PATH to be the local path
+#! ! ! ! ! ! !
+#DELETE THE OUT FOLDER AFTER CHANGING THIS BECAUSE VISUAL STUDIO DOESN'T SEEM TO RECOGNIZE THIS CHANGE AND REBUILD!
+option(PRODUCTION_BUILD "Make this a production build!" OFF)
+#DELETE THE OUT FOLDER AFTER CHANGING THIS BECAUSE VISUAL STUDIO DOESN'T SEEM TO RECOGNIZE THIS CHANGE AND REBUILD!
+
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Release>:Release>")
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE) #link time optimization
+
+# Ensure SFML is built as static libraries
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build SFML as static libraries" FORCE)
+
+if(MSVC) 
+add_compile_options(/arch:AVX2) #make sure SIMD optimizations take place
+endif()
+
+project(Checkers)
+
+set(ABSOLUTE_RESOURCES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/resources/")
+
+# Dependencies
+add_subdirectory(third_party/fmt)
 
 include(FetchContent)
 FetchContent_Declare(SFML
@@ -12,8 +38,6 @@ FetchContent_Declare(SFML
     SYSTEM)
 FetchContent_MakeAvailable(SFML)
 
-add_executable(main src/main.cpp)
-target_compile_features(main PRIVATE cxx_std_17)
-target_link_libraries(main PRIVATE SFML::Graphics)
-
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT main)
+# Add Libraries
+add_subdirectory(core)
+add_subdirectory(App)

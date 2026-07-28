@@ -2,6 +2,7 @@
 
 #include <string>
 #include <optional>
+#include <unordered_map>
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Color.hpp>
@@ -56,22 +57,22 @@ public:
 	requires(std::is_base_of_v<Layer, TLayer>)
 	int PushLayer(Args&&... construct_args)
 	{
-		Debugging::LogInfo("Creating new layer at index {}...", current_layer_index_);
-		layer_stack_.push_back(std::make_unique<TLayer>(std::forward<Args>(construct_args)...));
-		return current_layer_index_++;
+		Debugging::LogInfo("Creating new layer with id `{}`...", current_layer_id_);
+		layer_stack_.try_emplace(current_layer_id_++, std::make_unique<TLayer>(std::forward<Args>(construct_args)...));
+		return current_layer_id_++;
 	}
 
 	template <class TLayer>
 	requires(std::is_base_of_v<Layer, TLayer>)
 	TLayer* GetLayer(int index) const
 	{
-		auto pointer = layer_stack_.at(index).get();
-		if (!pointer)
+		auto it = layer_stack_.find(index);
+		if (it == layer_stack_.end())
 		{
-			Debugging::LogError("No layer found on index ´{}´.", current_layer_index_);
-			return pointer;
+			Debugging::LogError("No layer found with id ´{}´.", current_layer_id_);
+			return nullptr;
 		}
-		auto type_pointer = dynamic_cast<TLayer*>(pointer);
+		auto type_pointer = dynamic_cast<TLayer*>(it->second);
 		if (!type_pointer)
 		{
 			Debugging::LogError("Failed casting layer to the requested type.");
@@ -79,8 +80,11 @@ public:
 		return type_pointer;
 	}	
 
-	void QueueLayerForDeletion(unsigned int index);
-	void QueueLayerTransition(unsigned int from_index, std::unique_ptr<Layer> to_layer);
+	void QueueLayerForDeletion(unsigned int id);
+	void QueueLayerTransition(unsigned int from_id, std::unique_ptr<Layer> to_layer);
+
+	void DeleteQueuedLayers    () noexcept;
+	void TransitionQueuedLayers();
 
 	static Engine& Get();
 
@@ -91,17 +95,17 @@ private:
 
 	sf::RenderWindow window_;
 
-	std::vector<std::unique_ptr<Layer>> layer_stack_{};
-	int current_layer_index_ = 0;
+	std::unordered_map<int, std::unique_ptr<Layer>> layer_stack_{};
+	unsigned int current_layer_id_ = 0;
 
 	std::vector<unsigned int> queued_layers_for_deletion_{};
 
 	std::unique_ptr<Layer> to_queued_layer_transition_ = nullptr;
-	unsigned int from_index_queued_layer_transition_ = 0;
+	unsigned int from_id_queued_layer_transition_ = 0;
 
 	void CreateWindow();
 
-	void RemoveLayer(unsigned int index);
+	void RemoveLayer(unsigned int index) noexcept;
 };
 
 } // namespace core	

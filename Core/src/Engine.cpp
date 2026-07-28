@@ -42,46 +42,28 @@ void core::Engine::Run()
 				Debugging::LogInfo("Exiting the main loop...");
 				window_.close();
 			}
-			for (auto& layer : layer_stack_)
+			for (auto& [id, layer] : layer_stack_)
 			{
 				layer->HandleEvent(event.value());
 			}
 		}
 		auto delta = time_.restart().asSeconds();
-		for (auto& layer : layer_stack_)
+		for (auto& [id, layer] : layer_stack_)
 		{
 			layer->Update(delta);
 		}
 
 		window_.clear(specification_.window_specification_.background_color_);
-		for (auto& layer : layer_stack_)
+		for (auto& [id, layer] : layer_stack_)
 		{
 			window_.draw(*layer);
 		}
 		window_.display();
 	}
 
-	if (queued_layers_for_deletion_.size() > 0)
-	{
-		for (auto index : queued_layers_for_deletion_)
-		{
-			RemoveLayer(index);
-		}
-	}
+	DeleteQueuedLayers();
 
-	if (to_queued_layer_transition_ != nullptr)
-	{
-		Debugging::LogInfo("Transitioning layers...");		
-		if (from_index_queued_layer_transition_ > layer_stack_.size())
-		{
-			Debugging::LogError("invalid index for layer transition.");
-			return;
-		}
-		layer_stack_.at(from_index_queued_layer_transition_) = std::move(to_queued_layer_transition_);
-
-		to_queued_layer_transition_         = nullptr;
-		from_index_queued_layer_transition_ = 0;
-	}
+	TransitionQueuedLayers();
 }
 
 void core::Engine::Stop() noexcept
@@ -89,19 +71,49 @@ void core::Engine::Stop() noexcept
 	window_.close();
 }
 
-void core::Engine::QueueLayerForDeletion(unsigned int index)
+void core::Engine::QueueLayerForDeletion(unsigned int id)
 {
-	queued_layers_for_deletion_.push_back(index);
+	queued_layers_for_deletion_.push_back(id);
 }
 
-void core::Engine::QueueLayerTransition(unsigned int from_index, std::unique_ptr<Layer> to_layer)
+void core::Engine::QueueLayerTransition(unsigned int from_id, std::unique_ptr<Layer> to_layer)
 {
-	if (from_index > layer_stack_.size())
+	if (!layer_stack_.contains(from_id))
 	{
-		Debugging::LogError("invalid index for layer transition.");
+		Debugging::LogError("invalid id `{}` for layer transition.", from_id);
 	}
-	from_index_queued_layer_transition_ = from_index;
-	to_queued_layer_transition_ = std::move(to_layer);
+	from_id_queued_layer_transition_ = from_id;
+	to_queued_layer_transition_      = std::move(to_layer);
+}
+
+void core::Engine::DeleteQueuedLayers() noexcept
+{
+	if (queued_layers_for_deletion_.size() == 0)
+	{
+		return;
+	}
+	for (auto id : queued_layers_for_deletion_)
+	{
+		RemoveLayer(id);
+	}
+}
+
+void core::Engine::TransitionQueuedLayers()
+{
+	if (to_queued_layer_transition_ == nullptr)
+	{
+		return;
+	}
+	Debugging::LogInfo("Transitioning layers...");
+	if (!layer_stack_.contains(from_id_queued_layer_transition_))
+	{
+		Debugging::LogError("invalid id `{}` for layer transition.", from_id_queued_layer_transition_);
+		return;
+	}
+	layer_stack_.try_emplace(from_id_queued_layer_transition_, std::move(to_queued_layer_transition_));
+
+	to_queued_layer_transition_      = nullptr;
+	from_id_queued_layer_transition_ = 0;
 }
 
 core::Engine& core::Engine::Get()
@@ -132,12 +144,13 @@ void core::Engine::CreateWindow()
 	window_.setIcon(image_);
 }
 
-void core::Engine::RemoveLayer(unsigned int index)
+void core::Engine::RemoveLayer(unsigned int id) noexcept
 {
-	Debugging::LogInfo("Removing layer by id ´{}´...", index);
-	if (index >= layer_stack_.size())
+	Debugging::LogInfo("Removing layer by id ´{}´...", id);		
+	if (!layer_stack_.contains(id))
 	{
-		Debugging::LogError("Invalid layer id.");
+		Debugging::LogError("No layer found for id `{}`.", id);
+		return;
 	}
-	layer_stack_.erase(layer_stack_.begin() + index);
+	layer_stack_.erase(id);
 }

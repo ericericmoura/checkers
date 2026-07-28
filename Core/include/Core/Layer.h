@@ -10,12 +10,7 @@ namespace core
 
 class Layer : public sf::Drawable
 {
-public:
-	template <typename TLayer, typename ... Args>
-	void TransitionTo(Args&&... args)
-	{
-		Engine::Get().
-	};
+public:	
 
 	virtual void HandleEvent(sf::Event event) {};
 	virtual void Update(float delta) {};

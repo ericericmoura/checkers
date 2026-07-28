@@ -3,7 +3,7 @@
 #include <fmt/base.h>
 #include <fmt/color.h>
 
-namespace Core
+namespace core
 {
 namespace Debugging
 {
@@ -37,10 +37,10 @@ void LogDebugImpl(fmt::format_string<Args...> format, Args&&... args)
 }
 
 } // namespace Debugging
-} // namespace Core
+} // namespace core
 
 #if PRODUCTION_BUILD
 #define LOG_DEBUG(...) ((void)0)
 #else
-#define LOG_DEBUG(...) ::Core::Debugging::LogDebugImpl(__VA_ARGS__)
+#define LOG_DEBUG(...) ::core::Debugging::LogDebugImpl(__VA_ARGS__)
 #endif

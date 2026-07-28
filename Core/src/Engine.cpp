@@ -9,22 +9,22 @@
 
 #include "Core/Debugging/Logging.h"
 
-Core::Engine::Engine(const EngineSpecification& engine_specification)
+core::Engine::Engine(const EngineSpecification& engine_specification)
 	: specification_(engine_specification)
 {	
 	assert(instance_ == nullptr);
 	instance_ = this;
 	
 	Debugging::LogInfo("Initializing the engine...");
-	Debugging::LogInfo("Creating window...");
+	Debugging::LogInfo("Creating the window...");
 	CreateWindow();
 	Debugging::LogInfo("Finish creating the window.");
 	Debugging::LogInfo("Finish initializing the engine.");
 }
 
-void Core::Engine::Run()
+void core::Engine::Run()
 {
-	Debugging::LogInfo("Starting main loop...");
+	Debugging::LogInfo("Starting the main loop...");
 	sf::Clock time_{};
 	while (window_.isOpen())
 	{
@@ -32,23 +32,48 @@ void Core::Engine::Run()
 		{
 			if (event->is<sf::Event::Closed>())
 			{
-				Debugging::LogInfo("Exiting main loop...");
+				Debugging::LogInfo("Exiting the main loop...");
 				window_.close();
+			}
+			for (auto& layer : layer_stack_)
+			{
+				layer->HandleEvent(event);
 			}
 		}
 		auto delta = time_.restart().asSeconds();
+		for (auto& layer : layer_stack_)
+		{
+			layer->Update(delta);
+		}
 
 		window_.clear(specification_.window_specification_.background_color_);
+		for (auto& layer : layer_stack_)
+		{
+			window_.draw(*layer);
+		}
 		window_.display();
+	}
+
+	if (queued_layers_for_deletion_.size() > 0)
+	{
+		for (auto index : queued_layers_for_deletion_)
+		{
+			RemoveLayer(index);
+		}
 	}
 }
 
-void Core::Engine::Stop() noexcept
+void core::Engine::Stop() noexcept
 {
 	window_.close();
 }
 
-void Core::Engine::CreateWindow()
+void core::Engine::QueueLayerForDeletion(unsigned int index)
+{
+	queued_layers_for_deletion_.push_back(index);
+}
+
+void core::Engine::CreateWindow()
 {
 	if (!specification_.window_specification_.mode_.isValid())
 	{
@@ -68,4 +93,14 @@ void Core::Engine::CreateWindow()
 
 	sf::Image image_{ specification_.window_specification_.icon_texture_key_ };
 	window_.setIcon(image_);
+}
+
+void core::Engine::RemoveLayer(unsigned int index)
+{
+	Debugging::LogInfo("Removing layer by id ´{}´...", index);
+	if (index >= layer_stack_.size())
+	{
+		Debugging::LogError("Invalid layer id.");
+	}
+	layer_stack_.erase(layer_stack_.begin() + index);
 }

@@ -8,7 +8,10 @@
 #include <SFML/Window/VideoMode.hpp>
 #include <SFML/Window/WindowEnums.hpp>
 
-namespace Core
+#include "Debugging/Logging.h"
+#include "Layer.h"
+
+namespace core
 {
 
 /* Window specifications
@@ -49,6 +52,35 @@ public:
 	void Run();
 	void Stop() noexcept;
 
+	template <class TLayer, typename ... Args>
+	requires(std::is_base_of_v<Layer, TLayer>)
+	int PushLayer(Args&&... construct_args)
+	{
+		Debugging::LogInfo("Creating new layer at index {}...", current_layer_index_);
+		layer_stack_.push_back(std::make_unique<TLayer>(std::forward<Args>(construct_args)...));
+		return current_layer_index_++;
+	}
+
+	template <class TLayer>
+	requires(std::is_base_of_v<Layer, TLayer>)
+	TLayer* GetLayer(int index)
+	{
+		auto pointer = layer_stack_.at(index).get();
+		if (!pointer)
+		{
+			Debugging::LogError("No layer found on index ´{}´.", current_layer_index_);
+			return pointer;
+		}
+		auto type_pointer = dynamic_cast<TLayer*>(pointer);
+		if (!type_pointer)
+		{
+			Debugging::LogError("Failed casting layer to the requested type.");
+		}
+		return type_pointer;
+	}	
+
+	void QueueLayerForDeletion(unsigned int index);
+
 private:
 	inline static Engine* instance_;
 
@@ -56,7 +88,14 @@ private:
 
 	sf::RenderWindow window_;
 
+	std::vector<std::unique_ptr<Layer>> layer_stack_{};
+	int current_layer_index_ = 0;
+
+	std::vector<unsigned int> queued_layers_for_deletion_{};
+
 	void CreateWindow();
+
+	void RemoveLayer(unsigned int index);
 };
 
-} // namespace Core	
+} // namespace core	

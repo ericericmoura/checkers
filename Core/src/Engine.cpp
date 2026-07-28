@@ -1,6 +1,8 @@
 #include "Core/Engine.h"
 
 #include <cassert>
+#include <memory>
+#include <utility>
 
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/Graphics/Image.hpp>
@@ -8,6 +10,7 @@
 #include <SFML/System/Clock.hpp>
 
 #include "Core/Debugging/Logging.h"
+#include "Core/Layer.h"
 
 core::Engine::Engine(const EngineSpecification& engine_specification)
 	: specification_(engine_specification)
@@ -30,6 +33,10 @@ void core::Engine::Run()
 	{
 		while (auto event = window_.pollEvent())
 		{
+			if (!event.has_value())
+			{
+				continue;
+			}
 			if (event->is<sf::Event::Closed>())
 			{
 				Debugging::LogInfo("Exiting the main loop...");
@@ -37,7 +44,7 @@ void core::Engine::Run()
 			}
 			for (auto& layer : layer_stack_)
 			{
-				layer->HandleEvent(event);
+				layer->HandleEvent(event.value());
 			}
 		}
 		auto delta = time_.restart().asSeconds();
@@ -61,6 +68,20 @@ void core::Engine::Run()
 			RemoveLayer(index);
 		}
 	}
+
+	if (to_queued_layer_transition_ != nullptr)
+	{
+		Debugging::LogInfo("Transitioning layers...");		
+		if (from_index_queued_layer_transition_ > layer_stack_.size())
+		{
+			Debugging::LogError("invalid index for layer transition.");
+			return;
+		}
+		layer_stack_.at(from_index_queued_layer_transition_) = std::move(to_queued_layer_transition_);
+
+		to_queued_layer_transition_         = nullptr;
+		from_index_queued_layer_transition_ = 0;
+	}
 }
 
 void core::Engine::Stop() noexcept
@@ -73,15 +94,31 @@ void core::Engine::QueueLayerForDeletion(unsigned int index)
 	queued_layers_for_deletion_.push_back(index);
 }
 
+void core::Engine::QueueLayerTransition(unsigned int from_index, std::unique_ptr<Layer> to_layer)
+{
+	if (from_index > layer_stack_.size())
+	{
+		Debugging::LogError("invalid index for layer transition.");
+	}
+	from_index_queued_layer_transition_ = from_index;
+	to_queued_layer_transition_ = std::move(to_layer);
+}
+
+core::Engine& core::Engine::Get()
+{
+	assert(instance_);
+	return *instance_;
+}
+
 void core::Engine::CreateWindow()
 {
-	if (!specification_.window_specification_.mode_.isValid())
+	if (!specification_.window_specification_.video_mode_.isValid())
 	{
 		Debugging::LogWarn("currently used video mode is invalid.");
 	}
 
 	window_.create(
-		specification_.window_specification_.mode_,
+		specification_.window_specification_.video_mode_,
 		specification_.window_specification_.title_,
 		specification_.window_specification_.window_state_
 	);

@@ -11,11 +11,20 @@ namespace core
 class Layer : public sf::Drawable
 {
 public:
+	template <typename TLayer, typename ... Args>
+	void TransitionTo(Args&&... args)
+	{
+		Engine::Get().
+	};
+
 	virtual void HandleEvent(sf::Event event) {};
 	virtual void Update(float delta) {};
 
 	// Inherited via sf::Drawable
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override = 0;
+
+private:
+
 };
 
 } // namespace core

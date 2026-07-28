@@ -3,9 +3,9 @@
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Window/Keyboard.hpp>
 
 #include "Core/Debugging/Logging.h"
-#include <SFML/Window/Keyboard.hpp>
 
 void GameLayer::HandleEvent(sf::Event event)
 {

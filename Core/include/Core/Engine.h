@@ -24,7 +24,7 @@ struct WindowSpecification
 	sf::Color     background_color_ = sf::Color::Black;
 
 	sf::State	  window_state_ = sf::State::Windowed;
-	sf::VideoMode mode_  = {};
+	sf::VideoMode video_mode_  = {};
 };
 
 /* Engine specifications
@@ -63,7 +63,7 @@ public:
 
 	template <class TLayer>
 	requires(std::is_base_of_v<Layer, TLayer>)
-	TLayer* GetLayer(int index)
+	TLayer* GetLayer(int index) const
 	{
 		auto pointer = layer_stack_.at(index).get();
 		if (!pointer)
@@ -80,6 +80,9 @@ public:
 	}	
 
 	void QueueLayerForDeletion(unsigned int index);
+	void QueueLayerTransition(unsigned int from_index, std::unique_ptr<Layer> to_layer);
+
+	static Engine& Get();
 
 private:
 	inline static Engine* instance_;
@@ -92,6 +95,9 @@ private:
 	int current_layer_index_ = 0;
 
 	std::vector<unsigned int> queued_layers_for_deletion_{};
+
+	std::unique_ptr<Layer> to_queued_layer_transition_ = nullptr;
+	unsigned int from_index_queued_layer_transition_ = 0;
 
 	void CreateWindow();
 

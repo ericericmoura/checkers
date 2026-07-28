@@ -10,10 +10,11 @@
 #include <SFML/Window/WindowEnums.hpp>
 
 #include "Debugging/Logging.h"
-#include "Layer.h"
 
 namespace core
 {
+
+class Layer;
 
 /* Window specifications
 * this controls the window's settings, such as title, icon, states (fullscreen or windowed), etc.
@@ -58,7 +59,7 @@ public:
 	int PushLayer(Args&&... construct_args)
 	{
 		Debugging::LogInfo("Creating new layer with id `{}`...", current_layer_id_);
-		layer_stack_.try_emplace(current_layer_id_++, std::make_unique<TLayer>(std::forward<Args>(construct_args)...));
+		layer_stack_.try_emplace(current_layer_id_, std::make_unique<TLayer>(current_layer_id_, std::forward<Args>(construct_args)...));
 		return current_layer_id_++;
 	}
 
@@ -96,7 +97,7 @@ private:
 	sf::RenderWindow window_;
 
 	std::unordered_map<int, std::unique_ptr<Layer>> layer_stack_{};
-	unsigned int current_layer_id_ = 0;
+	unsigned int current_layer_id_ = 1;
 
 	std::vector<unsigned int> queued_layers_for_deletion_{};
 

@@ -6,6 +6,12 @@
 #include <SFML/Window/Keyboard.hpp>
 
 #include "Core/Debugging/Logging.h"
+#include "Core/Layer.h"
+#include "MainMenuLayer.h"
+
+GameLayer::GameLayer(unsigned int id) noexcept
+	: Layer(id)
+{}
 
 void GameLayer::HandleEvent(sf::Event event)
 {
@@ -13,7 +19,8 @@ void GameLayer::HandleEvent(sf::Event event)
 	{
 		if (key_event->scancode == sf::Keyboard::Scancode::S)
 		{
-			core::Debugging::LogInfo("Pressed S. Saving the game!");
+			core::Debugging::LogInfo("Transitioning to main menu!");
+			TransitionTo<MainMenuLayer>();
 		}
 	}
 }

@@ -59,11 +59,10 @@ void core::Engine::Run()
 			window_.draw(*layer);
 		}
 		window_.display();
+
+		DeleteQueuedLayers();
+		TransitionQueuedLayers();
 	}
-
-	DeleteQueuedLayers();
-
-	TransitionQueuedLayers();
 }
 
 void core::Engine::Stop() noexcept
@@ -104,13 +103,12 @@ void core::Engine::TransitionQueuedLayers()
 	{
 		return;
 	}
-	Debugging::LogInfo("Transitioning layers...");
 	if (!layer_stack_.contains(from_id_queued_layer_transition_))
 	{
 		Debugging::LogError("invalid id `{}` for layer transition.", from_id_queued_layer_transition_);
 		return;
 	}
-	layer_stack_.try_emplace(from_id_queued_layer_transition_, std::move(to_queued_layer_transition_));
+	layer_stack_[from_id_queued_layer_transition_] = std::move(to_queued_layer_transition_);
 
 	to_queued_layer_transition_      = nullptr;
 	from_id_queued_layer_transition_ = 0;

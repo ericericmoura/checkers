@@ -5,12 +5,21 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Window/Event.hpp>
 
+#include "Engine.h"
+
 namespace core
 {
 
 class Layer : public sf::Drawable
 {
-public:	
+public:
+	Layer(unsigned int id) noexcept;
+
+	template <typename TLayer, typename ... Args>
+	void TransitionTo(Args&&... args)
+	{		
+		Engine::Get().QueueLayerTransition(id_, std::make_unique<TLayer>(id_, std::forward<Args>(args)...));
+	};
 
 	virtual void HandleEvent(sf::Event event) {};
 	virtual void Update(float delta) {};
@@ -19,7 +28,7 @@ public:
 	virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const override = 0;
 
 private:
-
+	unsigned int id_ = 0;
 };
 
 } // namespace core

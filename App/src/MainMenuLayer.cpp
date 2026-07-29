@@ -9,11 +9,11 @@
 #include "COre/FontStore.h"
 #include "Core/Debugging/Logging.h"
 #include "GameLayer.h"
-#include "ResourcesConstants.h"
+#include "Constants/ResourcesConstants.h"
 
 MainMenuLayer::MainMenuLayer(unsigned int id) noexcept
 	: Layer(id)
-	, title_text_(*core::FontStore::Get().GetFont(ResourcesConstants::pixel_font_key_.data()))
+	, title_text_(*core::FontStore::Get().GetFont(resources_constants::pixel_font_key_.data()))
 {
 	background_.setSize({ 1920, 1080 });
 	background_.setPosition({ 0, 0 });

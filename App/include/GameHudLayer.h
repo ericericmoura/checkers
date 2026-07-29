@@ -5,6 +5,7 @@
 #include <SFML/Graphics/RectangleShape.hpp>
 #include <SFML/Graphics/Text.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/System/Time.hpp>
 
 #include "Core/Layer.h"
 
@@ -23,6 +24,5 @@ private:
 	sf::Text paused_text_;	
 	
 	float invincibility_delay_ = 0.3f;
-
 	sf::Time created_at_{};
 };

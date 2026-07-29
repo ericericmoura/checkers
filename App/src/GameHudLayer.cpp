@@ -10,11 +10,11 @@
 #include "Core/FontStore.h"
 #include "GameLayer.h"
 #include "MainMenuLayer.h"
-#include "ResourcesConstants.h"
+#include "Constants/ResourcesConstants.h"
 
 GameHudLayer::GameHudLayer(unsigned int id) noexcept
 	: Layer(id)
-	, paused_text_(*core::FontStore::Get().GetFont(ResourcesConstants::pixel_font_key_.data()))
+	, paused_text_(*core::FontStore::Get().GetFont(resources_constants::pixel_font_key_.data()))
 {
 	created_at_ = core::Engine::GetElapsedTime();
 

@@ -87,6 +87,8 @@ public:
 	void DeleteQueuedLayers    () noexcept;
 	void TransitionQueuedLayers();
 
+	sf::Vector2u GetCurrentDisplaySize() const noexcept;
+
 	static sf::Time GetElapsedTime() noexcept;
 	static Engine& Get();
 

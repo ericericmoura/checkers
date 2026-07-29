@@ -8,6 +8,8 @@
 #include <SFML/Graphics/Image.hpp>
 #include <SFML/Window/Event.hpp>
 #include <SFML/System/Clock.hpp>
+#include <SFML/System/Time.hpp>
+#include <SFML/System/Vector2.hpp>
 
 #include "Core/Debugging/Logging.h"
 #include "Core/Layer.h"
@@ -116,6 +118,11 @@ void core::Engine::TransitionQueuedLayers()
 
 	to_queued_layer_transition_      = nullptr;
 	from_id_queued_layer_transition_ = 0;
+}
+
+sf::Vector2u core::Engine::GetCurrentDisplaySize() const noexcept
+{
+	return specification_.window_specification_.video_mode_.size;
 }
 
 sf::Time core::Engine::GetElapsedTime() noexcept

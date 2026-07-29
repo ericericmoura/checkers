@@ -3,6 +3,7 @@
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RectangleShape.hpp>
+#include <SFML/Graphics/Text.hpp>
 #include <SFML/Window/Event.hpp>
 
 #include "Core/Layer.h"
@@ -19,4 +20,6 @@ public:
 
 private:
 	sf::RectangleShape background_{};
+
+	sf::Text title_text_;
 };

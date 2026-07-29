@@ -15,4 +15,7 @@ public:
 	void HandleEvent(sf::Event event) override;
 	void Update(float delta) override;
 	void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
+
+private:
+	unsigned int pause_menu_screen_id_ = 0;
 };

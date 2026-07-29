@@ -47,7 +47,10 @@ void core::Engine::Run()
 				layer->HandleEvent(event.value());
 			}
 		}
-		auto delta = time_.restart().asSeconds();
+		auto delta_time = time_.restart();
+		elapsed_time_ += delta_time;
+		auto delta = elapsed_time_.asSeconds();
+
 		for (auto& [id, layer] : layer_stack_)
 		{
 			layer->Update(delta);
@@ -93,8 +96,9 @@ void core::Engine::DeleteQueuedLayers() noexcept
 	}
 	for (auto id : queued_layers_for_deletion_)
 	{
-		RemoveLayer(id);
+		RemoveLayer(id);		
 	}
+	queued_layers_for_deletion_.clear();
 }
 
 void core::Engine::TransitionQueuedLayers()
@@ -112,6 +116,11 @@ void core::Engine::TransitionQueuedLayers()
 
 	to_queued_layer_transition_      = nullptr;
 	from_id_queued_layer_transition_ = 0;
+}
+
+sf::Time core::Engine::GetElapsedTime() noexcept
+{
+	return Get().elapsed_time_;
 }
 
 core::Engine& core::Engine::Get()
@@ -150,5 +159,5 @@ void core::Engine::RemoveLayer(unsigned int id) noexcept
 		Debugging::LogError("No layer found for id `{}`.", id);
 		return;
 	}
-	layer_stack_.erase(id);
+	layer_stack_.erase(id);	
 }

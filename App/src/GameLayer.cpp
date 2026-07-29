@@ -7,6 +7,7 @@
 
 #include "Core/Debugging/Logging.h"
 #include "Core/Layer.h"
+#include "GameHudLayer.h"
 #include "MainMenuLayer.h"
 
 GameLayer::GameLayer(unsigned int id) noexcept
@@ -17,10 +18,15 @@ void GameLayer::HandleEvent(sf::Event event)
 {
 	if (auto key_event = event.getIf<sf::Event::KeyPressed>())
 	{
-		if (key_event->scancode == sf::Keyboard::Scancode::S)
+		if (key_event->scancode == sf::Keyboard::Scancode::F1)
 		{
-			core::Debugging::LogInfo("Transitioning to main menu!");
+			core::Debugging::LogInfo("Transitioning to main menu...");
 			TransitionTo<MainMenuLayer>();
+		}
+		else if (key_event->scancode == sf::Keyboard::Scancode::Escape && core::Engine::Get().GetLayer<GameHudLayer>(pause_menu_screen_id_) == nullptr)
+		{
+			core::Debugging::LogInfo("Creating pause screen...");
+			pause_menu_screen_id_ = core::Engine::Get().PushLayer<GameHudLayer>();
 		}
 	}
 }

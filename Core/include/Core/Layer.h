@@ -21,6 +21,11 @@ public:
 		Engine::Get().QueueLayerTransition(id_, std::make_unique<TLayer>(id_, std::forward<Args>(args)...));
 	};
 
+	void DestroySelf() const
+	{
+		Engine::Get().QueueLayerForDeletion(id_);
+	};
+
 	virtual void HandleEvent(sf::Event event) {};
 	virtual void Update(float delta) {};
 

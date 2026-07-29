@@ -65,18 +65,18 @@ public:
 
 	template <class TLayer>
 	requires(std::is_base_of_v<Layer, TLayer>)
-	TLayer* GetLayer(int index) const
+	TLayer* GetLayer(unsigned int id) const
 	{
-		auto it = layer_stack_.find(index);
+		auto it = layer_stack_.find(id);
 		if (it == layer_stack_.end())
 		{
-			Debugging::LogError("No layer found with id ´{}´.", current_layer_id_);
+			Debugging::LogWarn("No layer found with id ´{}´.", current_layer_id_);
 			return nullptr;
 		}
-		auto type_pointer = dynamic_cast<TLayer*>(it->second);
+		auto type_pointer = dynamic_cast<TLayer*>(it->second.get());
 		if (!type_pointer)
 		{
-			Debugging::LogError("Failed casting layer to the requested type.");
+			Debugging::LogWarn("Failed casting layer to the requested type.");
 		}
 		return type_pointer;
 	}	
@@ -87,6 +87,7 @@ public:
 	void DeleteQueuedLayers    () noexcept;
 	void TransitionQueuedLayers();
 
+	static sf::Time GetElapsedTime() noexcept;
 	static Engine& Get();
 
 private:
@@ -103,6 +104,8 @@ private:
 
 	std::unique_ptr<Layer> to_queued_layer_transition_ = nullptr;
 	unsigned int from_id_queued_layer_transition_ = 0;
+
+	sf::Time elapsed_time_{};
 
 	void CreateWindow();
 

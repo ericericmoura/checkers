@@ -6,15 +6,15 @@ project(App)
 file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE APP_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
 
-set(MAIN_SOURCE       "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+set(MAIN_SOURCE       "${CMAKE_CURRENT_SOURCE_DIR}/src/Main.cpp")
 set(DEBUG_MAIN_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/DebugTerminal.cpp")
 
 list(REMOVE_ITEM APP_SOURCES "${MAIN_SOURCE}" "${DEBUG_MAIN_SOURCE}")
 
-add_executable(App             ${APP_SOURCES} ${MAIN_SOURCE}       ${APP_HEADERS})
+add_executable(Game            ${APP_SOURCES} ${MAIN_SOURCE}       ${APP_HEADERS})
 add_executable(DebugTerminal   ${APP_SOURCES} ${DEBUG_MAIN_SOURCE} ${APP_HEADERS})
 
-set(APP_TARGETS App DebugTerminal)
+set(APP_TARGETS Game DebugTerminal)
 	
 foreach(target ${APP_TARGETS})
 	set_property(TARGET "${target}" PROPERTY CXX_STANDARD 23)

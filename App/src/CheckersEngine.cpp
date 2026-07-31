@@ -4,7 +4,6 @@
 #include <string>
 
 #include "Core/Utils/BitUtils.h"
-#include "Core/Debugging/Logging.h"
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
 #include "Constants/ChessConstants.h"
@@ -18,11 +17,11 @@ void CheckersEngine::InitBoards() noexcept
 std::string CheckersEngine::ToString() const noexcept
 {
 	std::string output = "";
-	for (size_t rank = 0; rank < chess_constants::row_count_; ++rank)
+	for (int rank = chess_constants::row_count_-1; rank >= 0; --rank)
 	{
-		output += rank + 1 - '0';
+		output += (rank + 1) + '0';
 		output += "  ";
-		for (size_t file = chess_constants::col_count_; file >= 0; --file)
+		for (int file = 0; file < chess_constants::col_count_; ++file)
 		{
 			const auto index = file + rank * chess_constants::col_count_;
 			const auto piece_side = GetSideByIndex(index);
@@ -34,8 +33,9 @@ std::string CheckersEngine::ToString() const noexcept
 			output += symbol;
 			output += " ";
 		}
+		output += "\n";
 	}
-	output += "    a b c d e f g h";
+	output += "\n   a b c d e f g h";
 	return output;
 }
 

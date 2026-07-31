@@ -20,16 +20,16 @@ core::Engine::Engine(const EngineSpecification& engine_specification)
 	assert(instance_ == nullptr);
 	instance_ = this;
 	
-	Debugging::LogInfo("Initializing the engine...");
-	Debugging::LogInfo("Creating the window...");
+	debugging::LogInfo("Initializing the engine...");
+	debugging::LogInfo("Creating the window...");
 	CreateWindow();
-	Debugging::LogInfo("Finish creating the window.");
-	Debugging::LogInfo("Finish initializing the engine.");
+	debugging::LogInfo("Finish creating the window.");
+	debugging::LogInfo("Finish initializing the engine.");
 }
 
 void core::Engine::Run()
 {
-	Debugging::LogInfo("Starting the main loop...");
+	debugging::LogInfo("Starting the main loop...");
 	sf::Clock time_{};
 	while (window_.isOpen())
 	{
@@ -41,7 +41,7 @@ void core::Engine::Run()
 			}
 			if (event->is<sf::Event::Closed>())
 			{
-				Debugging::LogInfo("Exiting the main loop...");
+				debugging::LogInfo("Exiting the main loop...");
 				window_.close();
 			}
 			for (auto& [id, layer] : layer_stack_)
@@ -84,7 +84,7 @@ void core::Engine::QueueLayerTransition(unsigned int from_id, std::unique_ptr<La
 {
 	if (!layer_stack_.contains(from_id))
 	{
-		Debugging::LogError("invalid id `{}` for layer transition.", from_id);
+		debugging::LogError("invalid id `{}` for layer transition.", from_id);
 	}
 	from_id_queued_layer_transition_ = from_id;
 	to_queued_layer_transition_      = std::move(to_layer);
@@ -111,7 +111,7 @@ void core::Engine::TransitionQueuedLayers()
 	}
 	if (!layer_stack_.contains(from_id_queued_layer_transition_))
 	{
-		Debugging::LogError("invalid id `{}` for layer transition.", from_id_queued_layer_transition_);
+		debugging::LogError("invalid id `{}` for layer transition.", from_id_queued_layer_transition_);
 		return;
 	}
 	layer_stack_[from_id_queued_layer_transition_] = std::move(to_queued_layer_transition_);
@@ -140,7 +140,7 @@ void core::Engine::CreateWindow()
 {
 	if (!specification_.window_specification_.video_mode_.isValid())
 	{
-		Debugging::LogWarn("currently used video mode is invalid.");
+		debugging::LogWarn("currently used video mode is invalid.");
 	}
 
 	window_.create(
@@ -160,10 +160,10 @@ void core::Engine::CreateWindow()
 
 void core::Engine::RemoveLayer(unsigned int id) noexcept
 {
-	Debugging::LogInfo("Removing layer by id ´{}´...", id);		
+	debugging::LogInfo("Removing layer by id ´{}´...", id);		
 	if (!layer_stack_.contains(id))
 	{
-		Debugging::LogError("No layer found for id `{}`.", id);
+		debugging::LogError("No layer found for id `{}`.", id);
 		return;
 	}
 	layer_stack_.erase(id);	

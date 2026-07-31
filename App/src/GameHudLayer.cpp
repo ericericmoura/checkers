@@ -33,7 +33,7 @@ void GameHudLayer::HandleEvent(sf::Event event)
 	{
 		if (key_event->scancode == sf::Keyboard::Scancode::Escape && (core::Engine::GetElapsedTime() - created_at_).asSeconds() > invincibility_delay_)
 		{
-			core::Debugging::LogInfo("Closing pause screen...");
+			core::debugging::LogInfo("Closing pause screen...");
 			DestroySelf();
 		}
 		else if (key_event->scancode == sf::Keyboard::Scancode::F1)

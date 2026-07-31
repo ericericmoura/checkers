@@ -5,32 +5,37 @@ project(App)
 # DON'T ADD THE SOURCES BY HAND, they are already added with this macro
 file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 file(GLOB_RECURSE APP_HEADERS CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/include/*.h")
-add_executable("${PROJECT_NAME}" ${APP_SOURCES} ${APP_HEADERS})
 
-set_property(TARGET "${PROJECT_NAME}" PROPERTY CXX_STANDARD 23)
+set(MAIN_SOURCE       "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+set(DEBUG_MAIN_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/DebugTerminal.cpp")
 
-target_include_directories("${PROJECT_NAME}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
+list(REMOVE_ITEM APP_SOURCES "${MAIN_SOURCE}" "${DEBUG_MAIN_SOURCE}")
 
-# Add Libraries
-target_link_libraries("${PROJECT_NAME}" PRIVATE
-	Core
-	SFML::Graphics
-	fmt
-)
+add_executable(App             ${APP_SOURCES} ${MAIN_SOURCE}       ${APP_HEADERS})
+add_executable(DebugTerminal   ${APP_SOURCES} ${DEBUG_MAIN_SOURCE} ${APP_HEADERS})
 
-if(PRODUCTION_BUILD)
-	# setup the ASSETS_PATH macro to be in the root folder of your exe
-	target_compile_definitions("${PROJECT_NAME}" PUBLIC RESOURCES_PATH="./resources/") 
-	target_compile_definitions("${PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=1) 
-else()
-	# This is useful to get an ASSETS_PATH in your IDE during development
-	target_compile_definitions("${PROJECT_NAME}" PUBLIC RESOURCES_PATH="${ABSOLUTE_RESOURCES_DIR}")
-	target_compile_definitions("${PROJECT_NAME}" PUBLIC PRODUCTION_BUILD=0) 
-endif()
+set(APP_TARGETS App DebugTerminal)
+	
+foreach(target ${APP_TARGETS})
+	set_property(TARGET "${target}" PROPERTY CXX_STANDARD 23)
 
-if(MSVC) # If using the VS compiler...
-	target_compile_definitions("${PROJECT_NAME}" PUBLIC _CRT_SECURE_NO_WARNINGS)
+	target_include_directories("${target}" PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include/")
 
-	#YOU CAN REMOVE THE CONSOLE WITH THIS LINE! YOU CAN EVEN DO AN IF PRODUCTION_BUILD TO REMOVE IT ONLY IN PRODUCTION BUILDS
-	#set_target_properties("${PROJECT_NAME}" PROPERTIES LINK_FLAGS "/SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup") #no console
-endif()
+	target_link_libraries("${target}" PRIVATE
+		Core
+		SFML::Graphics
+		fmt
+	)
+
+	if(PRODUCTION_BUILD)
+		target_compile_definitions("${target}" PUBLIC RESOURCES_PATH="./resources/")
+		target_compile_definitions("${target}" PUBLIC PRODUCTION_BUILD=1)
+	else()
+		target_compile_definitions("${target}" PUBLIC RESOURCES_PATH="${ABSOLUTE_RESOURCES_DIR}")
+		target_compile_definitions("${target}" PUBLIC PRODUCTION_BUILD=0)
+	endif()
+
+	if(MSVC)
+		target_compile_definitions("${target}" PUBLIC _CRT_SECURE_NO_WARNINGS)
+	endif()
+endforeach()

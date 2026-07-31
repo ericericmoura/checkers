@@ -5,7 +5,7 @@
 
 namespace core
 {
-namespace Debugging
+namespace debugging
 {
 
 template <typename... Args>
@@ -36,11 +36,11 @@ void LogDebugImpl(fmt::format_string<Args...> format, Args&&... args)
         "\nDEBUG: {}", fmt::format(format, std::forward<Args>(args)...));
 }
 
-} // namespace Debugging
+} // namespace debugging
 } // namespace core
 
 #if PRODUCTION_BUILD
 #define LOG_DEBUG(...) ((void)0)
 #else
-#define LOG_DEBUG(...) ::core::Debugging::LogDebugImpl(__VA_ARGS__)
+#define LOG_DEBUG(...) ::core::debugging::LogDebugImpl(__VA_ARGS__)
 #endif

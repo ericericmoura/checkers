@@ -30,7 +30,7 @@ void MainMenuLayer::HandleEvent(sf::Event event)
 	{
 		if (key_event->scancode == sf::Keyboard::Scancode::Enter)
 		{
-			core::Debugging::LogInfo("Transitioning to the game...");
+			core::debugging::LogInfo("Transitioning to the game...");
 			TransitionTo<GameLayer>();
 		}
 	}

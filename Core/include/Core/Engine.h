@@ -58,7 +58,7 @@ public:
 	requires(std::is_base_of_v<Layer, TLayer>)
 	int PushLayer(Args&&... construct_args)
 	{
-		Debugging::LogInfo("Creating new layer with id `{}`...", current_layer_id_);
+		debugging::LogInfo("Creating new layer with id `{}`...", current_layer_id_);
 		layer_stack_.try_emplace(current_layer_id_, std::make_unique<TLayer>(current_layer_id_, std::forward<Args>(construct_args)...));
 		return current_layer_id_++;
 	}
@@ -70,13 +70,13 @@ public:
 		auto it = layer_stack_.find(id);
 		if (it == layer_stack_.end())
 		{
-			Debugging::LogWarn("No layer found with id ´{}´.", current_layer_id_);
+			debugging::LogWarn("No layer found with id ´{}´.", current_layer_id_);
 			return nullptr;
 		}
 		auto type_pointer = dynamic_cast<TLayer*>(it->second.get());
 		if (!type_pointer)
 		{
-			Debugging::LogWarn("Failed casting layer to the requested type.");
+			debugging::LogWarn("Failed casting layer to the requested type.");
 		}
 		return type_pointer;
 	}	

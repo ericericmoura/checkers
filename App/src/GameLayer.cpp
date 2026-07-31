@@ -34,12 +34,12 @@ void GameLayer::HandleEvent(sf::Event event)
 	{
 		if (key_event->scancode == sf::Keyboard::Scancode::F1)
 		{
-			core::Debugging::LogInfo("Transitioning to main menu...");
+			core::debugging::LogInfo("Transitioning to main menu...");
 			TransitionTo<MainMenuLayer>();
 		}
 		else if (key_event->scancode == sf::Keyboard::Scancode::Escape && core::Engine::Get().GetLayer<GameHudLayer>(pause_menu_screen_id_) == nullptr)
 		{
-			core::Debugging::LogInfo("Creating pause screen...");
+			core::debugging::LogInfo("Creating pause screen...");
 			pause_menu_screen_id_ = core::Engine::Get().PushLayer<GameHudLayer>();
 		}
 	}

@@ -14,7 +14,7 @@ sf::Texture* core::BitmapStore::GetTexture(std::string key) noexcept
 		const auto success = bitmaps_[key].loadFromFile(key);
 		if (!success)
 		{
-			Debugging::LogError("texture not found for key `{}`", key);
+			debugging::LogError("texture not found for key `{}`", key);
 			return nullptr;
 		}
 		return &bitmaps_.at(key);

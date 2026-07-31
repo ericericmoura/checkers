@@ -10,7 +10,7 @@ sf::Font* core::FontStore::GetFont(std::string key) noexcept
 		const auto success = fonts_map_[key].openFromFile(key);
 		if (!success)
 		{
-			Debugging::LogError("font not found for key `{}`", key);
+			debugging::LogError("font not found for key `{}`", key);
 			return nullptr;
 		}
 		return &fonts_map_.at(key);

@@ -1,10 +1,27 @@
 #include <iostream>
 
 #include "CheckersEngine.h"
+#include <string>
 
 int main()
 {
 	CheckersEngine checkers_engine_;
 	checkers_engine_.InitBoards();
-	std::cout << checkers_engine_.ToString() << "\n";
+
+	std::string input;
+	while (true)
+	{
+		std::cout << checkers_engine_.ToString() << "\n";
+
+		std::cout << "\nEnter command:\n";
+		std::cout << "  Q: quit\n  Move example: a1b2\n-";
+		std::cin >> input;
+
+		if (input == "Q")
+		{
+			return 0;
+		}
+
+		checkers_engine_.ExecuteCommand(input);
+	}
 }

@@ -1,12 +1,14 @@
 #include <iostream>
+#include <string>
 
 #include "CheckersEngine.h"
-#include <string>
 
 int main()
 {
 	CheckersEngine checkers_engine_;
-	checkers_engine_.InitBoards();
+	checkers_engine_.Init();
+
+	return 0;
 
 	std::string input;
 	while (true)

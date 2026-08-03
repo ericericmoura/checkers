@@ -10,11 +10,14 @@
 #include "Constants/ChessConstants.h"
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
+#include "Utils/ChessUtils.h"
 
-void CheckersEngine::InitBoards() noexcept
+void CheckersEngine::Init() noexcept
 {
 	SetBoard(Sides::White, Pieces::Pawn, 0xAA55);
 	SetBoard(Sides::Black, Pieces::Pawn, 0x55AA000000000000);
+
+	GenerateDiagonalRays();
 }
 
 std::string CheckersEngine::ToString() const noexcept
@@ -49,7 +52,7 @@ void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 		core::debugging::LogError("Invalid checkers command.");
 		return;
 	}
-	const auto commands = SplitCommand(cmd);	
+	const auto commands = SplitCommand(cmd);
 	
 	const auto first_i  = GetIndexFromNotation(commands.first );
 	const auto second_i = GetIndexFromNotation(commands.second);	
@@ -131,6 +134,11 @@ void CheckersEngine::SetBoard(Sides side, Pieces piece, bitboard board) noexcept
 	side_board |= board;
 }
 
+bitboard CheckersEngine::GetBoard(Sides side, Pieces piece) const noexcept
+{
+	return bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece));
+}
+
 std::pair<std::string, std::string> CheckersEngine::SplitCommand(std::string cmd) const noexcept
 {
 	std::pair<std::string, std::string> result{};
@@ -166,7 +174,19 @@ bitboard CheckersEngine::GetPossibleMovements(Sides side, Pieces type, size_t i)
 	return result;
 }
 
-bitboard CheckersEngine::GetBoard(Sides side, Pieces piece) const noexcept
+void CheckersEngine::GenerateDiagonalRays() noexcept
 {
-	return bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece));
+	for (size_t i = 0; i < 63; ++i)
+	{
+		bitboard board = 0;
+		board |= 0x1ull << i + 9;
+		board |= 0x1ull << i + 7;
+		board |= 0x1ull << i - 9;
+		board |= 0x1ull << i - 7;
+		if (i == 11)
+		{
+			auto board_str = utils::BitboardToString(board, '1');
+			core::debugging::LogInfo("{}", board_str);
+		}
+	}
 }

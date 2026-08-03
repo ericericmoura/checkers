@@ -17,7 +17,7 @@ using bitboardList      = std::array<bitboardSidesList, static_cast<size_t>(Side
 class CheckersEngine
 {
 public:
-	void InitBoards() noexcept;
+	void Init() noexcept;
 	
 	std::string ToString() const noexcept;
 	
@@ -32,6 +32,8 @@ private:
 	bitboard black_bb{};
 
 	Sides current_team_{};
+
+	std::array<bitboard, 64> diagonal_rays_{};
 
 	void MovePiece(size_t from, size_t to) noexcept;
 
@@ -48,4 +50,6 @@ private:
 	size_t GetIndexFromNotation(std::string notation) const noexcept;
 
 	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;
+	
+	void GenerateDiagonalRays() noexcept;
 };

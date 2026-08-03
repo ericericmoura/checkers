@@ -8,7 +8,7 @@
 
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
-#include <SFML/System/Vector2.hpp>
+#include <vector>
 
 using bitboard          = uint64_t;
 using bitboardSidesList = std::array<bitboard, static_cast<size_t>(Pieces::Count)>;
@@ -46,4 +46,6 @@ private:
 	
 	std::pair<std::string, std::string> SplitCommand(std::string cmd) const noexcept;
 	size_t GetIndexFromNotation(std::string notation) const noexcept;
+
+	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;
 };

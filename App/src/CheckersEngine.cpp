@@ -3,8 +3,7 @@
 #include <optional>
 #include <string>
 #include <utility>
-
-#include <SFML/System/Vector2.hpp>
+#include <cassert>
 
 #include "Core/Utils/BitUtils.h"
 #include "Core/Debugging/Logging.h"
@@ -50,7 +49,7 @@ void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 		core::debugging::LogError("Invalid checkers command.");
 		return;
 	}
-	const auto commands = SplitCommand(cmd);
+	const auto commands = SplitCommand(cmd);	
 	
 	const auto first_i  = GetIndexFromNotation(commands.first );
 	const auto second_i = GetIndexFromNotation(commands.second);	
@@ -70,6 +69,12 @@ void CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 	if (!side.has_value() || !type.has_value())
 	{
 		core::debugging::LogError("Can't move non-existent piece.");
+		return;
+	}
+	const auto movements = GetPossibleMovements(side.value(), type.value(), from);
+	if (!core::utils::IsBitSet(movements, to))
+	{
+		core::debugging::LogError("Invalid position.");
 		return;
 	}
 	auto board = GetBoard(side.value(), type.value());
@@ -136,9 +141,28 @@ std::pair<std::string, std::string> CheckersEngine::SplitCommand(std::string cmd
 
 size_t CheckersEngine::GetIndexFromNotation(std::string notation) const noexcept
 {
-	size_t result = 0;
-	result  = static_cast<std::size_t>(notation.at(0) - 'a');
-	result += static_cast<std::size_t>(notation.at(1) - '0' - 1) * chess_constants::col_count_;
+	const auto file = static_cast<std::size_t>(notation.at(1) - '0' - 1);
+	const auto rank = static_cast<std::size_t>(notation.at(0) - 'a');
+
+	bool out_of_bounds = file > chess_constants::row_count_ || rank > chess_constants::col_count_ || file < 0 || rank < 0;
+	assert(!out_of_bounds);
+
+	size_t result = file;
+	result += rank * chess_constants::col_count_;
+	return result;
+}
+
+bitboard CheckersEngine::GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept
+{
+	bitboard result = 0;
+	if (type == Pieces::Pawn)
+	{		
+		const auto sign = side == Sides::White ? +1 : -1;
+		result |= 0x1ull << i + 9 * static_cast<unsigned long long>(sign);
+		result |= 0x1ull << i + 7 * static_cast<unsigned long long>(sign);
+		return result;
+	}
+	core::debugging::LogError("Invalid piece type.");
 	return result;
 }
 

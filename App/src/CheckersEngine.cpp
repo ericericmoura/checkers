@@ -8,16 +8,30 @@
 #include "Core/Utils/BitUtils.h"
 #include "Core/Debugging/Logging.h"
 #include "Constants/ChessConstants.h"
+#include "Utils/ChessUtils.h"
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
-#include "Utils/ChessUtils.h"
+#include "Enums/Directions.h"
 
 void CheckersEngine::Init() noexcept
 {
-	SetBoard(Sides::White, Pieces::Pawn, 0xAA55);
-	SetBoard(Sides::Black, Pieces::Pawn, 0x55AA000000000000);
+	SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA55);
+	SetBoard(Sides::kBlack, Pieces::kPawn, 0x55AA000000000000);
 
-	GenerateDiagonalRays();
+	CacheDiagonalRays();
+
+	auto bb_rays = diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][27];
+	bb_rays     |= diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][27];
+	bb_rays     |= diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthEast)][27];
+	bb_rays     |= diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][27];
+
+	auto bb_rays_2 = diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][40];
+	bb_rays_2	  |= diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][40];
+	bb_rays_2	  |= diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthEast)][40];
+	bb_rays_2	  |= diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][40];
+
+	utils::LogBitboardWithContrast(bb_rays, 'R');
+	utils::LogBitboardWithContrast(bb_rays_2, 'R');
 }
 
 std::string CheckersEngine::ToString() const noexcept
@@ -34,7 +48,7 @@ std::string CheckersEngine::ToString() const noexcept
 			auto symbol = '0';
 			if (piece_side.has_value())
 			{
-				symbol = piece_side.value() == Sides::White ? 'W' : 'B';
+				symbol = piece_side.value() == Sides::kWhite ? 'W' : 'B';
 			}
 			output += symbol;
 			output += " ";
@@ -88,13 +102,13 @@ void CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 
 std::optional<Sides> CheckersEngine::GetSideByIndex(size_t i) const noexcept
 {
-	if (core::utils::IsBitSet(white_bb, i))
+	if (core::utils::IsBitSet(white_bb_, i))
 	{
-		return Sides::White;
+		return Sides::kWhite;
 	}
-	if (core::utils::IsBitSet(black_bb, i))
+	if (core::utils::IsBitSet(black_bb_, i))
 	{
-		return Sides::Black;
+		return Sides::kBlack;
 	}
 	return {};
 }
@@ -106,28 +120,28 @@ std::optional<Pieces> CheckersEngine::GetPieceTypeByIndex(size_t i) const noexce
 	{
 		return {};
 	}
-	const auto pawn_board  = bitboards_.at(static_cast<size_t>(side.value())).at(static_cast<size_t>(Pieces::Pawn ));
+	const auto pawn_board  = bitboards_.at(static_cast<size_t>(side.value())).at(static_cast<size_t>(Pieces::kPawn ));
 	if (core::utils::IsBitSet(pawn_board, i))
 	{
-		return Pieces::Pawn;
+		return Pieces::kPawn;
 	}
-	const auto queen_board = bitboards_.at(static_cast<size_t>(side.value())).at(static_cast<size_t>(Pieces::Queen));
+	const auto queen_board = bitboards_.at(static_cast<size_t>(side.value())).at(static_cast<size_t>(Pieces::kQueen));
 	if (core::utils::IsBitSet(queen_board, i))
 	{
-		return Pieces::Pawn;
+		return Pieces::kPawn;
 	}
 	return {};
 }
 
 bool CheckersEngine::IsIndexOccupied(size_t i) const noexcept
 {
-	return core::utils::IsBitSet(white_bb, i) || core::utils::IsBitSet(black_bb, i);
+	return core::utils::IsBitSet(white_bb_, i) || core::utils::IsBitSet(black_bb_, i);
 }
 
 void CheckersEngine::SetBoard(Sides side, Pieces piece, bitboard board) noexcept
 {
 	const auto old_bb = GetBoard(side, piece);
-	auto& side_board = side == Sides::White ? white_bb : black_bb;
+	auto& side_board = side == Sides::kWhite ? white_bb_ : black_bb_;
 
 	side_board ^= old_bb;
 	bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece)) = board;
@@ -163,9 +177,9 @@ size_t CheckersEngine::GetIndexFromNotation(std::string notation) const noexcept
 bitboard CheckersEngine::GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept
 {
 	bitboard result = 0;
-	if (type == Pieces::Pawn)
+	if (type == Pieces::kPawn)
 	{		
-		const auto sign = side == Sides::White ? +1 : -1;
+		const auto sign = side == Sides::kWhite ? +1 : -1;
 		result |= 0x1ull << i + 9 * static_cast<unsigned long long>(sign);
 		result |= 0x1ull << i + 7 * static_cast<unsigned long long>(sign);
 		return result;
@@ -174,19 +188,47 @@ bitboard CheckersEngine::GetPossibleMovements(Sides side, Pieces type, size_t i)
 	return result;
 }
 
-void CheckersEngine::GenerateDiagonalRays() noexcept
+void CheckersEngine::CacheDiagonalRays() noexcept
 {
-	for (size_t i = 0; i < 63; ++i)
+	for (size_t i = 0; i < 64; ++i)
 	{
-		bitboard board = 0;
-		board |= 0x1ull << i + 9;
-		board |= 0x1ull << i + 7;
-		board |= 0x1ull << i - 9;
-		board |= 0x1ull << i - 7;
-		if (i == 11)
-		{
-			auto board_str = utils::BitboardToString(board, '1');
-			core::debugging::LogInfo("{}", board_str);
-		}
+		const auto row = i / 8;
+		const auto col = i % 8;
+
+		diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][i] |= GenerateDiagonalRays(DiagonalDirections::kNorthWest, i);
+		diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][i] |= GenerateDiagonalRays(DiagonalDirections::kNorthEast, i);
+		diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][i] |= GenerateDiagonalRays(DiagonalDirections::kSouthWest, i);
+		diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthEast)][i] |= GenerateDiagonalRays(DiagonalDirections::kSouthEast, i);
 	}
+}
+
+bitboard CheckersEngine::GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept
+{
+	bitboard result = 0;
+
+	auto file = index / chess_constants::col_count_;
+	auto rank = index % chess_constants::col_count_;
+
+	while (true)
+	{
+		if (   (dir == DiagonalDirections::kNorthWest && !(rank < chess_constants::col_count_ - 1 && file < chess_constants::row_count_ - 1))
+			|| (dir == DiagonalDirections::kNorthEast && !(rank > 0 && file < chess_constants::row_count_ - 1))
+			|| (dir == DiagonalDirections::kSouthEast && !(rank < chess_constants::col_count_ - 1 && file > 0))
+			|| (dir == DiagonalDirections::kSouthWest && !(rank > 0 && file > 0)))
+		{
+			break;
+		}
+
+		switch (dir)
+		{
+			case DiagonalDirections::kNorthWest: file++; rank++; break;  // was rank--
+			case DiagonalDirections::kNorthEast: file++; rank--; break;  // was rank++
+			case DiagonalDirections::kSouthEast: file--; rank++; break;
+			case DiagonalDirections::kSouthWest: file--; rank--; break;
+		}
+
+		const auto square = rank + file * chess_constants::col_count_;
+		result |= 0x1ull << square;		
+	}
+	return result;
 }

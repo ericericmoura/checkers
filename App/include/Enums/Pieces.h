@@ -2,7 +2,7 @@
 
 enum class Pieces
 {
-	Pawn,
-	Queen,
-	Count
+	kPawn,
+	kQueen,
+	kCount
 };

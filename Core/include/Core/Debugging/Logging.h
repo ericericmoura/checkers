@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include <fmt/base.h>
 #include <fmt/color.h>
 

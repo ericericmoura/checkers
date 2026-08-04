@@ -1,7 +1,5 @@
 #pragma once
 
-#include <unordered_map>
-
 #include <SFML/System/Vector2.hpp>
 
 namespace chess_constants

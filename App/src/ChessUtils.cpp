@@ -1,9 +1,14 @@
 #include "Utils/ChessUtils.h"
 
 #include <string>
+#include <iostream>
+
+#include <fmt/base.h>
+#include <fmt/color.h>
 
 #include "Constants/ChessConstants.h"
 #include "Core/Utils/BitUtils.h"
+#include "Enums/Directions.h"
 
 std::string utils::BitboardToString(bitboard board, char symbol) noexcept
 {
@@ -28,4 +33,19 @@ std::string utils::BitboardToString(bitboard board, char symbol) noexcept
 	}
 	output += "\n   a b c d e f g h";
 	return output;
+}
+
+void utils::LogBitboardWithContrast(bitboard board, char symbol_to_highlight) noexcept
+{
+	const auto textboard = BitboardToString(board, symbol_to_highlight);
+	std::cout << "\n";
+	for (const auto& letter : textboard)
+	{
+		if (letter == symbol_to_highlight)
+		{
+			fmt::print(fg(fmt::color::orange) | fmt::emphasis::italic, "{}", letter);
+			continue;
+		}
+		std::cout << letter;
+	}
 }

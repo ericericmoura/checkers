@@ -2,7 +2,7 @@
 
 enum class Sides
 {
-	White,
-	Black,
-	Count
+	kWhite,
+	kBlack,
+	kCount
 };

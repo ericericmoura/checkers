@@ -6,13 +6,15 @@
 #include <optional>
 #include <utility>		
 
+#include "Constants/ChessConstants.h"
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
-#include <vector>
+#include "Enums/Directions.h"
 
-using bitboard          = uint64_t;
-using bitboardSidesList = std::array<bitboard, static_cast<size_t>(Pieces::Count)>;
-using bitboardList      = std::array<bitboardSidesList, static_cast<size_t>(Sides::Count)>;
+using bitboard            = uint64_t;
+using bitboard_sides_list = std::array<bitboard, static_cast<size_t>(Pieces::kCount)>;
+using bitboard_list       = std::array<bitboard_sides_list, static_cast<size_t>(Sides::kCount)>;
+using ray_list            = std::array<std::array<bitboard, chess_constants::col_count_* chess_constants::row_count_>, static_cast<int>(DiagonalDirections::kCount)>;
 
 class CheckersEngine
 {
@@ -27,13 +29,12 @@ public:
 	void ExecuteCommand(std::string cmd) noexcept;
 
 private:
-	bitboardList bitboards_{};
-	bitboard white_bb{};
-	bitboard black_bb{};
+	bitboard_list bitboards_{};
+	bitboard white_bb_{};
+	bitboard black_bb_{};
+	ray_list diagonal_rays_{};
 
-	Sides current_team_{};
-
-	std::array<bitboard, 64> diagonal_rays_{};
+	Sides current_team_{};	
 
 	void MovePiece(size_t from, size_t to) noexcept;
 
@@ -49,7 +50,8 @@ private:
 	std::pair<std::string, std::string> SplitCommand(std::string cmd) const noexcept;
 	size_t GetIndexFromNotation(std::string notation) const noexcept;
 
-	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;
-	
-	void GenerateDiagonalRays() noexcept;
+	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;	
+
+	void CacheDiagonalRays() noexcept;
+	bitboard GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept;
 };

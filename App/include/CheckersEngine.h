@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <vector>
 #include <cstdint>
 #include <string>
 #include <optional>
@@ -11,18 +12,15 @@
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
 
-using bitboard            = uint64_t;
-using bitboard_sides_list = std::array<bitboard, static_cast<size_t>(Pieces::kCount)>;
-using bitboard_list       = std::array<bitboard_sides_list, static_cast<size_t>(Sides::kCount)>;
-using ray_list            = std::array<std::array<bitboard, chess_constants::col_count_* chess_constants::row_count_>, static_cast<int>(DiagonalDirections::kCount)>;
+using bitboard      = uint64_t;
+using bitboard_list = std::array<std::array<bitboard, static_cast<size_t>(Pieces::kCount)>, static_cast<size_t>(Sides::kCount)>;
+using ray_list      = std::array<std::array<bitboard, chess_constants::col_count_* chess_constants::row_count_>, static_cast<int>(DiagonalDirections::kCount)>;
 
 class CheckersEngine
 {
 public:
 	void Init() noexcept;
-	
 	void Print() const noexcept;
-	
 	void ExecuteCommand(std::string cmd) noexcept;
 
 private:
@@ -31,9 +29,13 @@ private:
 	bitboard black_bb_{};
 	ray_list diagonal_rays_{};
 
-	Sides current_team_{};	
+	Sides current_team_ = Sides::kWhite;
 
-	void MovePiece(size_t from, size_t to) noexcept;
+	std::vector<std::string> required_moves_{};
+
+	void FinishTurn() noexcept;
+
+	bool MovePiece(size_t from, size_t to) noexcept;
 
 	std::optional<Sides>  GetSideByIndex (size_t i) const noexcept;
 	std::optional<Pieces> GetPieceTypeByIndex(size_t i) const noexcept;
@@ -45,7 +47,7 @@ private:
 	void SetBoard(Sides side, Pieces piece, bitboard board) noexcept;
 	
 	std::pair<std::string, std::string> SplitCommand(std::string cmd) const noexcept;
-	size_t GetIndexFromNotation(std::string notation) const noexcept;
+	std::optional<size_t> GetIndexFromNotation(std::string notation) const noexcept;
 
 	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;
 	bitboard GetPossibleMovementsForQueen(Sides side, size_t i) const noexcept;

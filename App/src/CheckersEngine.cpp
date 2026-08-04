@@ -12,7 +12,6 @@
 #include "Core/Utils/BitUtils.h"
 #include "Core/Debugging/Logging.h"
 #include "Constants/ChessConstants.h"
-#include "Utils/ChessUtils.h"
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
@@ -29,6 +28,9 @@ void CheckersEngine::Init() noexcept
 
 void CheckersEngine::Print() const noexcept
 {
+	const auto side_to_play = current_team_ == Sides::kWhite ? "White" : "Black";
+	fmt::print("\n{} to play.", side_to_play);
+
 	fmt::print("\n");
 	for (int rank = chess_constants::row_count_ - 1; rank >= 0; --rank)
 	{
@@ -71,35 +73,54 @@ void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 	const auto commands = SplitCommand(cmd);
 	
 	const auto first_i  = GetIndexFromNotation(commands.first );
-	const auto second_i = GetIndexFromNotation(commands.second);	
+	const auto second_i = GetIndexFromNotation(commands.second);		
 
-	MovePiece(first_i, second_i);
+	if (!first_i.has_value() || !second_i.has_value())
+	{
+		core::debugging::LogError("Invalid checkers command.");
+		return;
+	}
+
+	bool success_moving = MovePiece(first_i.value(), second_i.value());	
+	if (!success_moving)
+	{
+		return;
+	}
+	FinishTurn();
 }
 
-void CheckersEngine::MovePiece(size_t from, size_t to) noexcept
+void CheckersEngine::FinishTurn() noexcept
+{
+	current_team_ = current_team_ == Sides::kWhite
+		? Sides::kBlack
+		: Sides::kWhite;
+}
+
+bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 {	
 	if (IsIndexOccupied(to))
 	{
 		core::debugging::LogError("Can't move piece into an occupied square.");
-		return;
+		return false;
 	}
 	const auto side = GetSideByIndex(from);
 	const auto type = GetPieceTypeByIndex(from);
-	if (!side.has_value() || !type.has_value())
+	if (!side.has_value() || !type.has_value() || side != current_team_)
 	{
-		core::debugging::LogError("Can't move non-existent piece.");
-		return;
+		core::debugging::LogError("There's no allied piece at the specified position.");
+		return false;
 	}
 	const auto movements = GetPossibleMovements(side.value(), type.value(), from);
 	if (!core::utils::IsBitSet(movements, to))
 	{
 		core::debugging::LogError("Invalid movement.");
-		return;
+		return false;
 	}
 	auto board = GetBoard(side.value(), type.value());
 	board = core::utils::ClearBit(board, from);
 	board = core::utils::SetBit  (board, to  );
 	SetBoard(side.value(), type.value(), board);
+	return true;
 }
 
 std::optional<Sides> CheckersEngine::GetSideByIndex(size_t i) const noexcept
@@ -163,13 +184,22 @@ std::pair<std::string, std::string> CheckersEngine::SplitCommand(std::string cmd
 	return result;
 }
 
-size_t CheckersEngine::GetIndexFromNotation(std::string notation) const noexcept
+std::optional<size_t> CheckersEngine::GetIndexFromNotation(std::string notation) const noexcept
 {
+	if (notation.at(1) < '0' || notation.at(1) > '9' ||
+		notation.at(0) < 'a' || notation.at(0) > 'h')
+	{		
+		return {};
+	}
+
 	const auto file = static_cast<std::size_t>(notation.at(1) - '0' - 1);
 	const auto rank = static_cast<std::size_t>(notation.at(0) - 'a');
 
 	bool out_of_bounds = file > chess_constants::row_count_ || rank > chess_constants::col_count_ || file < 0 || rank < 0;
-	assert(!out_of_bounds);
+	if (out_of_bounds)
+	{
+		return {};
+	}
 
 	size_t result = rank;
 	result += file * chess_constants::col_count_;
@@ -203,8 +233,6 @@ bitboard CheckersEngine::GetPossibleMovementsForQueen(Sides side, size_t i) cons
 	attacks |= GetMaskedRayAttacks(DiagonalDirections::kNorthEast, i, blockers);
 	attacks |= GetMaskedRayAttacks(DiagonalDirections::kSouthWest, i, blockers);
 	attacks |= GetMaskedRayAttacks(DiagonalDirections::kSouthEast, i, blockers);
-
-	utils::LogBitboardWithContrast(attacks, 'R');
 
 	return attacks;
 }

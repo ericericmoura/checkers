@@ -17,3 +17,9 @@ enum class Directions : int
 	kWest,
 	kCount
 };
+
+enum class VerticalDirections
+{
+	kUp, 
+	kDown
+};

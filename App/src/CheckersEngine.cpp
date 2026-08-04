@@ -3,7 +3,6 @@
 #include <optional>
 #include <string>
 #include <utility>
-#include <cassert>
 #include <bit>
 
 #include <fmt/base.h>
@@ -15,15 +14,18 @@
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
+#include "Utils/ChessUtils.h"
 
 void CheckersEngine::Init() noexcept
 {
-	SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA55);
-	SetBoard(Sides::kBlack, Pieces::kPawn, 0xAA55100044000000);
-	SetBoard(Sides::kWhite, Pieces::kQueen, 0x1 << 8);
-	SetBoard(Sides::kWhite, Pieces::kQueen, 0x800000);
+	SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA3300000000);
+	SetBoard(Sides::kBlack, Pieces::kPawn, 0x0054000000000000);
+	//SetBoard(Sides::kWhite, Pieces::kQueen, 0x1 << 8);
+	//SetBoard(Sides::kWhite, Pieces::kQueen, 0x800000);
 
 	CacheDiagonalRays();
+
+	FinishTurn();
 }
 
 void CheckersEngine::Print() const noexcept
@@ -73,11 +75,17 @@ void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 	const auto commands = SplitCommand(cmd);
 	
 	const auto first_i  = GetIndexFromNotation(commands.first );
-	const auto second_i = GetIndexFromNotation(commands.second);		
+	const auto second_i = GetIndexFromNotation(commands.second);			
 
 	if (!first_i.has_value() || !second_i.has_value())
 	{
 		core::debugging::LogError("Invalid checkers command.");
+		return;
+	}
+
+	if (available_captures_ != 0 && !core::utils::IsBitSet(available_captures_, second_i.value()))
+	{
+		core::debugging::LogError("You are required to capture a piece.");
 		return;
 	}
 
@@ -94,6 +102,63 @@ void CheckersEngine::FinishTurn() noexcept
 	current_team_ = current_team_ == Sides::kWhite
 		? Sides::kBlack
 		: Sides::kWhite;
+
+	available_captures_ = 0;
+
+	available_captures_ = CheckForCaptures(current_team_);
+}
+
+bool CheckersEngine::CapturePiece(size_t from, size_t to) noexcept
+{
+	if (!core::utils::IsBitSet(available_captures_, to))
+	{
+		return false;
+	}
+	const auto side = GetSideByIndex(from);
+	const auto type = GetPieceTypeByIndex(from);
+
+	const auto dir_y = static_cast<int>(from) - static_cast<int>(to) > 0 ? VerticalDirections::kDown : VerticalDirections::kUp;
+	
+	const auto from_col = from % 8;
+	const auto to_col   = to   % 8;
+
+	const auto is_east = from_col > to_col;
+	const auto is_west = from_col < to_col;
+	
+	std::optional<size_t> enemy_i{};
+	if (dir_y == VerticalDirections::kUp && is_west)
+	{
+		enemy_i = from + 9;
+	}
+	if (dir_y == VerticalDirections::kUp && is_east)
+	{
+		enemy_i = from + 7;
+	}
+	if (dir_y == VerticalDirections::kDown && is_west)
+	{
+		enemy_i = from - 7;
+	}
+	if (dir_y == VerticalDirections::kDown && is_east)
+	{
+		enemy_i = from - 9;
+	}
+	if (!enemy_i.has_value())
+	{
+		return false;
+	}
+	const auto enemy_side = side.value() == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
+	const auto enemy_type = GetPieceTypeByIndex(enemy_i.value());
+
+	if (!enemy_type.has_value())
+	{
+		return false;
+	}
+
+	auto board = GetBoard(enemy_side, type.value());
+	board = core::utils::ClearBit(board, enemy_i.value());
+
+	SetBoard(enemy_side, enemy_type.value(), board);
+	return true;
 }
 
 bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
@@ -107,13 +172,23 @@ bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 	const auto type = GetPieceTypeByIndex(from);
 	if (!side.has_value() || !type.has_value() || side != current_team_)
 	{
-		core::debugging::LogError("There's no allied piece at the specified position.");
+		core::debugging::LogError("Can't move piece. It's either a non-existent or enemy piece.");
 		return false;
 	}
 	const auto movements = GetPossibleMovements(side.value(), type.value(), from);
-	if (!core::utils::IsBitSet(movements, to))
+	if (!core::utils::IsBitSet(movements | available_captures_, to))
 	{
 		core::debugging::LogError("Invalid movement.");
+		return false;
+	}
+	auto captured = true;
+	if (available_captures_ != 0)
+	{
+		captured = CapturePiece(from, to);
+	}
+	if (!captured)
+	{
+		core::debugging::LogError("Invalid capture.");
 		return false;
 	}
 	auto board = GetBoard(side.value(), type.value());
@@ -192,17 +267,17 @@ std::optional<size_t> CheckersEngine::GetIndexFromNotation(std::string notation)
 		return {};
 	}
 
-	const auto file = static_cast<std::size_t>(notation.at(1) - '0' - 1);
-	const auto rank = static_cast<std::size_t>(notation.at(0) - 'a');
+	const auto rank = static_cast<std::size_t>(notation.at(1) - '0' - 1);
+	const auto file = static_cast<std::size_t>(notation.at(0) - 'a');
 
-	bool out_of_bounds = file > chess_constants::row_count_ || rank > chess_constants::col_count_ || file < 0 || rank < 0;
+	bool out_of_bounds = rank > chess_constants::row_count_ || file > chess_constants::col_count_ || rank < 0 || file < 0;
 	if (out_of_bounds)
 	{
 		return {};
 	}
 
-	size_t result = rank;
-	result += file * chess_constants::col_count_;
+	size_t result = file;
+	result += rank * chess_constants::col_count_;
 	return result;
 }
 
@@ -257,6 +332,45 @@ bitboard CheckersEngine::GetMaskedRayAttacks(DiagonalDirections dir, size_t i, b
 
 	attacks &= ~diagonal_rays_[static_cast<int>(dir)][blocker_index];
 	return attacks;
+}
+
+bitboard CheckersEngine::CheckForCaptures(Sides side) noexcept
+{
+	const auto pawns = GetBoard(side, Pieces::kPawn);
+	const auto east_pawns = (pawns & ~(chess_constants::file_h | chess_constants::file_g));
+	const auto west_pawns = (pawns & ~(chess_constants::file_a | chess_constants::file_b));
+
+	auto opposite_side_bb = black_bb_;
+	auto north_east       = east_pawns << 9;
+	auto north_west       = west_pawns << 7;
+	auto side_text        = "White";
+
+	if (side == Sides::kBlack)
+	{
+		opposite_side_bb = white_bb_;
+		side_text = "Black";
+		north_east = east_pawns >> 7;
+		north_west = west_pawns >> 9;
+	}
+
+	const auto north_east_mask = north_east & opposite_side_bb;
+	const auto north_west_mask = north_west & opposite_side_bb;
+
+	bitboard captures = 0;
+
+	auto moved_north_east_mask = north_east_mask << 9;
+	auto moved_north_west_mask = north_west_mask << 7;
+
+	if (side == Sides::kBlack)
+	{
+		moved_north_east_mask = north_east_mask >> 7;
+		moved_north_west_mask = north_west_mask >> 9;
+	}
+
+	captures |= moved_north_east_mask & ~(black_bb_ | white_bb_);
+	captures |= moved_north_west_mask & ~(black_bb_ | white_bb_);
+	
+	return captures;
 }
 
 void CheckersEngine::CacheDiagonalRays() noexcept

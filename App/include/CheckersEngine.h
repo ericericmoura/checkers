@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <vector>
 #include <cstdint>
 #include <string>
 #include <optional>
@@ -31,10 +30,11 @@ private:
 
 	Sides current_team_ = Sides::kWhite;
 
-	std::vector<std::string> required_moves_{};
+	bitboard available_captures_ = 0;
 
 	void FinishTurn() noexcept;
 
+	bool CapturePiece(size_t from, size_t to) noexcept;
 	bool MovePiece(size_t from, size_t to) noexcept;
 
 	std::optional<Sides>  GetSideByIndex (size_t i) const noexcept;
@@ -51,7 +51,10 @@ private:
 
 	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;
 	bitboard GetPossibleMovementsForQueen(Sides side, size_t i) const noexcept;
+
 	bitboard GetMaskedRayAttacks(DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
+
+	bitboard CheckForCaptures(Sides side) noexcept;
 
 	void CacheDiagonalRays() noexcept;
 	bitboard GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept;

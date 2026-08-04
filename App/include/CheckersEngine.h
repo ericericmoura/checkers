@@ -47,7 +47,8 @@ private:
 	std::pair<std::string, std::string> SplitCommand(std::string cmd) const noexcept;
 	size_t GetIndexFromNotation(std::string notation) const noexcept;
 
-	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;	
+	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;
+	bitboard GetPossibleMovementsForQueen(Sides side, size_t i) const noexcept;
 
 	void CacheDiagonalRays() noexcept;
 	bitboard GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept;

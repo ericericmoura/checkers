@@ -4,6 +4,7 @@
 #include <string>
 #include <utility>
 #include <cassert>
+#include <bit>
 
 #include <fmt/base.h>
 #include <fmt/color.h>
@@ -14,11 +15,15 @@
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
+#include "Utils/ChessUtils.h"
 
 void CheckersEngine::Init() noexcept
 {
 	SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA55);
-	SetBoard(Sides::kBlack, Pieces::kPawn, 0x55AA000000000000);
+	
+	SetBoard(Sides::kBlack, Pieces::kPawn, 0xAA55100044000000);
+	SetBoard(Sides::kWhite, Pieces::kQueen, 0x1 << 8);
+	SetBoard(Sides::kWhite, Pieces::kQueen, 0x800000);
 
 	CacheDiagonalRays();
 }
@@ -182,8 +187,65 @@ bitboard CheckersEngine::GetPossibleMovements(Sides side, Pieces type, size_t i)
 		result |= 0x1ull << i + 7 * static_cast<unsigned long long>(sign);
 		return result;
 	}
+	if (type == Pieces::kQueen)
+	{
+		return GetPossibleMovementsForQueen(side, i);
+	}
 	core::debugging::LogError("Invalid piece type.");
 	return result;
+}
+
+bitboard CheckersEngine::GetPossibleMovementsForQueen(Sides side, size_t i) const noexcept
+{
+	const auto blockers = black_bb_ | white_bb_;
+	
+	bitboard attacks = 0;
+
+	const auto north_west_rays = diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][i];
+	const auto north_west_mask = north_west_rays & blockers;
+
+	attacks |= north_west_rays;
+	if (north_west_mask != 0 && std::popcount(north_west_mask) > 1) {
+		const auto blocker_index = chess_constants::col_count_ * chess_constants::row_count_ - std::countl_zero(north_west_mask);
+		attacks &= ~diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][blocker_index];
+	}
+
+	const auto north_east_rays = diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][i];
+	const auto north_east_mask = north_east_rays & blockers;
+	attacks |= north_east_rays;
+	if (north_east_mask != 0 && std::popcount(north_east_mask) > 1) {
+		const auto blocker_index = chess_constants::col_count_ * chess_constants::row_count_ - std::countl_zero(north_east_mask);
+		attacks &= ~diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][blocker_index];
+	}
+
+	const auto south_east_rays = diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthEast)][i];
+	const auto south_east_mask = south_east_rays & blockers;
+	attacks |= south_east_rays;
+	if (south_east_mask != 0 && std::popcount(south_east_mask) > 1) {
+		const auto blocker_index = std::countr_zero(south_east_mask);
+		attacks &= ~diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthEast)][blocker_index];
+	}
+
+	const auto south_west_rays = diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][i];
+	const auto south_west_mask = south_west_rays & blockers;
+	attacks |= south_west_rays;
+	if (south_west_mask != 0 && std::popcount(south_west_mask) > 1) {
+		const auto blocker_index = std::countr_zero(south_west_mask);
+		attacks &= ~diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][blocker_index];
+	}
+
+	fmt::print("\nNorth West rays: ");
+	utils::LogBitboardWithContrast(north_west_rays, 'R');
+	fmt::print("\nNorth East rays: ");
+	utils::LogBitboardWithContrast(north_east_rays, 'R');
+	fmt::print("\nSouth West rays: ");
+	utils::LogBitboardWithContrast(south_west_rays, 'R');
+	fmt::print("\nSouth East rays: ");
+	utils::LogBitboardWithContrast(south_east_rays, 'R');
+	fmt::print("\nAttacks: ");
+	utils::LogBitboardWithContrast(attacks, 'R');
+
+	return attacks;
 }
 
 void CheckersEngine::CacheDiagonalRays() noexcept

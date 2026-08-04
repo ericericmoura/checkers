@@ -8,7 +8,6 @@
 
 #include "Constants/ChessConstants.h"
 #include "Core/Utils/BitUtils.h"
-#include "Enums/Directions.h"
 
 std::string utils::BitboardToString(bitboard board, char symbol) noexcept
 {

@@ -49,6 +49,7 @@ private:
 
 	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;
 	bitboard GetPossibleMovementsForQueen(Sides side, size_t i) const noexcept;
+	bitboard GetMaskedRayAttacks(DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
 
 	void CacheDiagonalRays() noexcept;
 	bitboard GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept;

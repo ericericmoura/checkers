@@ -20,8 +20,6 @@ void CheckersEngine::Init() noexcept
 	SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA55);
 	SetBoard(Sides::kBlack, Pieces::kPawn, 0x55AA000000000000);
 
-	SetBoard(Sides::kBlack, Pieces::kQueen, 0x010000);
-
 	CacheDiagonalRays();
 }
 
@@ -91,7 +89,7 @@ void CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 	const auto movements = GetPossibleMovements(side.value(), type.value(), from);
 	if (!core::utils::IsBitSet(movements, to))
 	{
-		core::debugging::LogError("Invalid position.");
+		core::debugging::LogError("Invalid movement.");
 		return;
 	}
 	auto board = GetBoard(side.value(), type.value());
@@ -169,8 +167,8 @@ size_t CheckersEngine::GetIndexFromNotation(std::string notation) const noexcept
 	bool out_of_bounds = file > chess_constants::row_count_ || rank > chess_constants::col_count_ || file < 0 || rank < 0;
 	assert(!out_of_bounds);
 
-	size_t result = file;
-	result += rank * chess_constants::col_count_;
+	size_t result = rank;
+	result += file * chess_constants::col_count_;
 	return result;
 }
 

@@ -5,10 +5,12 @@
 #include <utility>
 #include <cassert>
 
+#include <fmt/base.h>
+#include <fmt/color.h>
+
 #include "Core/Utils/BitUtils.h"
 #include "Core/Debugging/Logging.h"
 #include "Constants/ChessConstants.h"
-#include "Utils/ChessUtils.h"
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
@@ -18,45 +20,43 @@ void CheckersEngine::Init() noexcept
 	SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA55);
 	SetBoard(Sides::kBlack, Pieces::kPawn, 0x55AA000000000000);
 
+	SetBoard(Sides::kBlack, Pieces::kQueen, 0x010000);
+
 	CacheDiagonalRays();
-
-	auto bb_rays = diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][27];
-	bb_rays     |= diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][27];
-	bb_rays     |= diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthEast)][27];
-	bb_rays     |= diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][27];
-
-	auto bb_rays_2 = diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][40];
-	bb_rays_2	  |= diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][40];
-	bb_rays_2	  |= diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthEast)][40];
-	bb_rays_2	  |= diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][40];
-
-	utils::LogBitboardWithContrast(bb_rays, 'R');
-	utils::LogBitboardWithContrast(bb_rays_2, 'R');
 }
 
-std::string CheckersEngine::ToString() const noexcept
+void CheckersEngine::Print() const noexcept
 {
-	std::string output = "\n";
-	for (int rank = chess_constants::row_count_-1; rank >= 0; --rank)
+	fmt::print("\n");
+	for (int rank = chess_constants::row_count_ - 1; rank >= 0; --rank)
 	{
-		output += (rank + 1) + '0';
-		output += "  ";
+		fmt::print("{}  ", rank + 1);
 		for (int file = 0; file < chess_constants::col_count_; ++file)
 		{
 			const auto index = file + rank * chess_constants::col_count_;
-			const auto piece_side = GetSideByIndex(index);
-			auto symbol = '0';
-			if (piece_side.has_value())
+			const auto side = GetSideByIndex(index);
+			const auto type = GetPieceTypeByIndex(index);
+			
+			if (!side.has_value())
 			{
-				symbol = piece_side.value() == Sides::kWhite ? 'W' : 'B';
+				fmt::print("0 ");
+				continue;
 			}
-			output += symbol;
-			output += " ";
+			auto symbol = 'P';
+			auto style  = side == Sides::kBlack 
+				? fg(fmt::color::orange_red  ) | fmt::emphasis::bold
+				: fg(fmt::color::light_yellow) | fmt::emphasis::bold;
+
+			if (type == Pieces::kQueen)
+			{
+				symbol = 'Q';
+			}
+
+			fmt::print(style, "{} ", symbol);
 		}
-		output += "\n";
+		fmt::print("\n");
 	}
-	output += "\n   a b c d e f g h";
-	return output;
+	fmt::print("\n   a b c d e f g h");
 }
 
 void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
@@ -128,7 +128,7 @@ std::optional<Pieces> CheckersEngine::GetPieceTypeByIndex(size_t i) const noexce
 	const auto queen_board = bitboards_.at(static_cast<size_t>(side.value())).at(static_cast<size_t>(Pieces::kQueen));
 	if (core::utils::IsBitSet(queen_board, i))
 	{
-		return Pieces::kPawn;
+		return Pieces::kQueen;
 	}
 	return {};
 }

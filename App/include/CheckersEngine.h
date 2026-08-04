@@ -21,11 +21,8 @@ class CheckersEngine
 public:
 	void Init() noexcept;
 	
-	std::string ToString() const noexcept;
+	void Print() const noexcept;
 	
-	// This is the API for communicating with the engine
-	// Input example: cmd = "e1f2" // move a pawn from e1 to f2
-	// Input example: cmd = "e1xg3" // move a pawn from e1 to g3 and capture a piece at f2
 	void ExecuteCommand(std::string cmd) noexcept;
 
 private:

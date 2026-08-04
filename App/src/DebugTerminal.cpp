@@ -8,12 +8,10 @@ int main()
 	CheckersEngine checkers_engine_;
 	checkers_engine_.Init();
 
-	return 0;
-
 	std::string input;
 	while (true)
 	{
-		std::cout << checkers_engine_.ToString() << "\n";
+		checkers_engine_.Print();
 
 		std::cout << "\nEnter command:\n";
 		std::cout << "  Q: quit\n  Move example: a1b2\n-";

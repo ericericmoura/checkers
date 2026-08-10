@@ -13,7 +13,7 @@
 
 using bitboard      = uint64_t;
 using bitboard_list = std::array<std::array<bitboard, static_cast<size_t>(Pieces::kCount)>, static_cast<size_t>(Sides::kCount)>;
-using ray_list      = std::array<std::array<bitboard, chess_constants::col_count_* chess_constants::row_count_>, static_cast<int>(DiagonalDirections::kCount)>;
+using ray_list      = std::array<std::array<bitboard, chess_constants::total_squares_>, static_cast<int>(DiagonalDirections::kCount)>;
 
 class CheckersEngine
 {
@@ -26,15 +26,19 @@ private:
 	bitboard_list bitboards_{};
 	bitboard white_bb_{};
 	bitboard black_bb_{};
+
 	ray_list diagonal_rays_{};
 
 	Sides current_team_ = Sides::kWhite;
 
-	bitboard available_captures_ = 0;
+	bitboard available_pawn_captures_  = 0;
+	bitboard available_queen_captures_ = 0;
 
 	void FinishTurn() noexcept;
 
 	bool CapturePiece(size_t from, size_t to) noexcept;
+	std::optional<size_t> CapturePieceWithQueen(size_t from, size_t to, VerticalDirections dir_y) const noexcept;
+
 	bool MovePiece(size_t from, size_t to) noexcept;
 
 	std::optional<Sides>  GetSideByIndex (size_t i) const noexcept;
@@ -52,9 +56,11 @@ private:
 	bitboard GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept;
 	bitboard GetPossibleMovementsForQueen(Sides side, size_t i) const noexcept;
 
-	bitboard GetMaskedRayAttacks(DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
+	bitboard GetMaskedRayAttacks (DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
+	bitboard GetMaskedRayCaptures(DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
 
 	bitboard CheckForCaptures(Sides side) noexcept;
+	bitboard GetQueenCaptures(Sides side) const noexcept;
 
 	void CacheDiagonalRays() noexcept;
 	bitboard GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept;

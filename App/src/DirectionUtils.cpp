@@ -19,9 +19,31 @@ DiagonalDirections utils::directions::GetOpositeDirection(DiagonalDirections dir
     {
         return DiagonalDirections::kNorthWest;
     }
-    if (dir == DiagonalDirections::kSouthWest)
+    return DiagonalDirections::kNorthEast;
+}
+
+VerticalDirections utils::directions::GetVerticalDirection(DiagonalDirections dir) noexcept
+{
+    if (dir == DiagonalDirections::kNorthEast || dir == DiagonalDirections::kNorthWest)
+    {
+        return VerticalDirections::kUp;
+    }
+    return VerticalDirections::kDown;
+}
+
+DiagonalDirections utils::directions::GetDiagonalDirection(bool is_east, bool is_up) noexcept
+{
+    if (is_east && is_up)
     {
         return DiagonalDirections::kNorthEast;
     }
-    return DiagonalDirections::kNorthWest;
+    if (!is_east && is_up)
+    {
+        return DiagonalDirections::kNorthWest;
+    }
+    if (is_east && !is_up)
+    {
+        return DiagonalDirections::kSouthEast;
+    }
+    return DiagonalDirections::kSouthWest;
 }

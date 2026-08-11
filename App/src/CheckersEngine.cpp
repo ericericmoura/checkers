@@ -19,8 +19,8 @@
 
 void CheckersEngine::Init() noexcept
 {
-	SetBoard(Sides::kWhite, Pieces::kQueen, 0x0002000800004000 | 0x1ull << 17);
-	SetBoard(Sides::kBlack, Pieces::kQueen, 0x1ull << 26);
+	SetBoard(Sides::kWhite, Pieces::kQueen, 0x1ull << 62);
+	SetBoard(Sides::kBlack, Pieces::kQueen, 0x1ull << 17-9 | 0x1ull << (17+9*2-9) | 0x1ull << (17+9*4));
 
 	CacheDiagonalRays();
 
@@ -30,7 +30,7 @@ void CheckersEngine::Init() noexcept
 void CheckersEngine::Print() const noexcept
 {
 	const auto side_to_play = current_team_ == Sides::kWhite ? "White" : "Black";
-	fmt::print("\n{} to play.", side_to_play);
+	fmt::print("\n\n{} to play.", side_to_play);
 
 	fmt::print("\n");
 	for (int rank = chess_constants::row_count_ - 1; rank >= 0; --rank)
@@ -103,16 +103,22 @@ void CheckersEngine::FinishTurn() noexcept
 		: Sides::kWhite;
 
 	UpdatePossibleCaptures(current_team_);
+
+	fmt::print("\n\nAvailable Queen Captures for team {}", current_team_ == Sides::kBlack ? "black" : "white");
+	utils::LogBitboardWithContrast(available_queen_captures_, 'C');
 }
 
 bool CheckersEngine::CapturePiece(size_t from, size_t to) noexcept
 {
-	if (!core::utils::IsBitSet(available_pawn_captures_, to))
+	const auto side = GetSideByIndex     (from);
+	const auto type = GetPieceTypeByIndex(from);
+
+	const auto available_captures = type == Pieces::kPawn ? available_pawn_captures_ : available_queen_captures_;
+
+	if (!core::utils::IsBitSet(available_captures, to))
 	{
 		return false;
 	}
-	const auto side = GetSideByIndex(from);
-	const auto type = GetPieceTypeByIndex(from);
 
 	const auto dir_y = static_cast<int>(from) - static_cast<int>(to) > 0 ? VerticalDirections::kDown : VerticalDirections::kUp;	
 
@@ -147,7 +153,28 @@ bool CheckersEngine::CapturePiece(size_t from, size_t to) noexcept
 
 std::optional<size_t> CheckersEngine::CapturePieceWithQueen(size_t from, size_t to, VerticalDirections dir_y) const noexcept
 {
-	return std::optional<size_t>();
+	const auto is_east = from%8 < to%8;
+
+	const auto dir = utils::directions::GetDiagonalDirection(is_east, dir_y == VerticalDirections::kUp);
+
+	const auto opposite_side_bb = current_team_ == Sides::kBlack ? white_bb_ : black_bb_;
+	const auto blockers         = diagonal_rays_[static_cast<int>(dir)][from] & opposite_side_bb;
+
+	if (std::popcount(blockers) == 0)
+	{
+		return {};
+	}
+
+	size_t enemy_i = {};
+	if (dir_y == VerticalDirections::kUp)
+	{
+		enemy_i = static_cast<size_t>(chess_constants::total_squares_) - std::countl_zero(blockers);
+	}
+	else
+	{
+		enemy_i = std::countr_zero(blockers);
+	}
+	return enemy_i;
 }
 
 bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
@@ -165,13 +192,14 @@ bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 		return false;
 	}
 	const auto movements = GetPossibleMovements(side.value(), type.value(), from);
-	if (!core::utils::IsBitSet(movements | available_pawn_captures_, to))
+	const auto available_captures = type == Pieces::kPawn ? available_pawn_captures_ : available_queen_captures_;
+	if (!core::utils::IsBitSet(movements | available_captures, to))
 	{
 		core::debugging::LogError("Invalid movement.");
 		return false;
 	}
 	auto captured = true;
-	if (available_pawn_captures_ != 0)
+	if (available_captures != 0)
 	{
 		captured = CapturePiece(from, to);
 	}
@@ -316,9 +344,9 @@ bitboard CheckersEngine::GetMaskedRayAttacks(DiagonalDirections dir, size_t i, b
 	}
 
 	auto mask_copy = mask;
-	size_t first_blocker_index  = static_cast<size_t>(chess_constants::total_squares_-1) - std::countl_zero(mask);
+	size_t first_blocker_index  = static_cast<size_t>(chess_constants::total_squares_) - 1 - std::countl_zero(mask);
 	mask_copy = core::utils::ClearBit(mask, first_blocker_index);
-	size_t second_blocker_index = static_cast<size_t>(chess_constants::total_squares_-1) - std::countl_zero(mask_copy);
+	size_t second_blocker_index = static_cast<size_t>(chess_constants::total_squares_) - 1 - std::countl_zero(mask_copy);
 
 	if (dir == DiagonalDirections::kNorthEast || dir == DiagonalDirections::kNorthWest)
 	{
@@ -333,39 +361,54 @@ bitboard CheckersEngine::GetMaskedRayCaptures(DiagonalDirections dir, size_t i, 
 {
 	bitboard captures = 0;
 
+	// Cast a ray from the user into the specific direction
 	const auto rays = diagonal_rays_[static_cast<int>(dir)][i];
-	const auto mask = rays & blockers;
 
-	captures |= rays;
-	captures &= ~blockers;
+	fmt::print("\n\nRays: ");
+	utils::LogBitboardWithContrast(rays, 'R');
+
+	fmt::print("\n\nBlockers: ");
+	utils::LogBitboardWithContrast(blockers, 'B');
+
+	// Mask out any enemies that are hit
+	const auto mask = rays & blockers;
 	if (mask == 0)
 	{
 		return 0;
-	}	
+	}
+	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
+
+	auto mask_copy = mask;
+
+	auto second_blocker_index = vertical_dir == VerticalDirections::kDown
+		? std::countr_zero(mask_copy)
+		: chess_constants::total_squares_ - 1 - std::countl_zero(mask_copy);
+	// If there's only one blocker, return
 	if (std::popcount(mask) == 1)
 	{
-		return captures;
+		return diagonal_rays_[static_cast<int>(dir)][second_blocker_index] & ~blockers;
 	}
-
-	size_t first_blocker_index  = std::countr_zero(mask);	
-	auto mask_copy = core::utils::ClearBit(mask, first_blocker_index);
-	size_t second_blocker_index = std::countr_zero(mask_copy);
-
-	if (dir == DiagonalDirections::kNorthEast || dir == DiagonalDirections::kNorthWest)
+	auto first_blocker_index  = 0;
+	do
 	{
-		size_t first_blocker_index  = static_cast<size_t>(chess_constants::total_squares_) - std::countl_zero(mask);
-		mask_copy = core::utils::ClearBit(mask, first_blocker_index);
-		size_t second_blocker_index = static_cast<size_t>(chess_constants::total_squares_) - std::countl_zero(mask_copy);
-	}
+		// Get the second blocker (farthest)
+		second_blocker_index = vertical_dir == VerticalDirections::kDown
+			? std::countr_zero(mask_copy)
+			: chess_constants::total_squares_ - 1 - std::countl_zero(mask_copy);
+		// Remove the second blocker
+		mask_copy = core::utils::ClearBit(mask_copy, second_blocker_index);
+		// Get the first blocker
+		first_blocker_index = vertical_dir == VerticalDirections::kDown
+			? std::countr_zero(mask_copy)
+			: chess_constants::total_squares_ - 1 - std::countl_zero(mask_copy);
+	} while (std::popcount(mask_copy) > 1);	
 
-	const auto opposite_ray_direction = utils::directions::GetOpositeDirection(dir);
-	captures &= ~diagonal_rays_[static_cast<int>(opposite_ray_direction)][first_blocker_index];
+	// Add the rays from the first blocker
+	captures |=  diagonal_rays_[static_cast<int>(dir)][first_blocker_index];
+	// Remove the rays past the second blocker
+	captures &= ~diagonal_rays_[static_cast<int>(dir)][second_blocker_index];
+	captures &= ~blockers;
 
-	const auto is_there_a_second_blocker = second_blocker_index < 63;
-	if (is_there_a_second_blocker)
-	{
-		captures &= ~diagonal_rays_[static_cast<int>(dir)][second_blocker_index];
-	}
 	return captures;
 }
 
@@ -380,29 +423,25 @@ bitboard CheckersEngine::GetQueenCaptures(Sides side) const noexcept
 {
 	bitboard result = 0;
 
+	const auto blockers = side == Sides::kWhite ? black_bb_ : white_bb_;
+
 	auto queen_bb = GetBoard(side, Pieces::kQueen);
 	while (queen_bb > 0)
 	{
 		const auto i = std::countr_zero(queen_bb);
 		queen_bb = core::utils::ClearBit(queen_bb, i);
-		result |= GetMaskedRayCaptures(DiagonalDirections::kNorthEast, i, white_bb_ | black_bb_);
-		result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, white_bb_ | black_bb_);
-		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthEast, i, white_bb_ | black_bb_);
-		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, white_bb_ | black_bb_);
+		//result |= GetMaskedRayCaptures(DiagonalDirections::kNorthEast, i, blockers);
+		//result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, blockers);
+		//result |= GetMaskedRayCaptures(DiagonalDirections::kSouthEast, i, blockers);
+		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, blockers);
 	}
-
-	utils::LogBitboardWithContrast(result, 'C');
-
 	return result;
 }
 
 void CheckersEngine::CacheDiagonalRays() noexcept
 {
-	for (size_t i = 0; i < 64; ++i)
+	for (size_t i = 0; i < chess_constants::total_squares_; ++i)
 	{
-		const auto row = i / 8;
-		const auto col = i % 8;
-
 		diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][i] |= GenerateDiagonalRays(DiagonalDirections::kNorthWest, i);
 		diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][i] |= GenerateDiagonalRays(DiagonalDirections::kNorthEast, i);
 		diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][i] |= GenerateDiagonalRays(DiagonalDirections::kSouthWest, i);
@@ -414,14 +453,14 @@ bitboard CheckersEngine::GenerateDiagonalRays(DiagonalDirections dir, size_t ind
 {
 	bitboard result = 0;
 
-	auto file = index / chess_constants::col_count_;
-	auto rank = index % chess_constants::col_count_;
+	auto file = index % chess_constants::col_count_;
+	auto rank = index / chess_constants::col_count_;
 
 	while (true)
 	{
-		if (   (dir == DiagonalDirections::kNorthWest && !(rank < chess_constants::col_count_ - 1 && file < chess_constants::row_count_ - 1))
-			|| (dir == DiagonalDirections::kNorthEast && !(rank > 0 && file < chess_constants::row_count_ - 1))
-			|| (dir == DiagonalDirections::kSouthEast && !(rank < chess_constants::col_count_ - 1 && file > 0))
+		if (   (dir == DiagonalDirections::kNorthWest && !(rank < chess_constants::row_count_ - 1 && file > 0))
+			|| (dir == DiagonalDirections::kNorthEast && !(rank < chess_constants::row_count_ - 1 && file < chess_constants::col_count_ - 1))
+			|| (dir == DiagonalDirections::kSouthEast && !(rank > 0 && file > chess_constants::col_count_ - 1))
 			|| (dir == DiagonalDirections::kSouthWest && !(rank > 0 && file > 0)))
 		{
 			break;
@@ -429,13 +468,13 @@ bitboard CheckersEngine::GenerateDiagonalRays(DiagonalDirections dir, size_t ind
 
 		switch (dir)
 		{
-			case DiagonalDirections::kNorthWest: file++; rank++; break; 
-			case DiagonalDirections::kNorthEast: file++; rank--; break; 
-			case DiagonalDirections::kSouthEast: file--; rank++; break;
+			case DiagonalDirections::kNorthWest: file--; rank++; break; 
+			case DiagonalDirections::kNorthEast: file++; rank++; break; 
+			case DiagonalDirections::kSouthEast: file++; rank--; break;
 			case DiagonalDirections::kSouthWest: file--; rank--; break;
 		}
 
-		const auto square = rank + file * chess_constants::col_count_;
+		const auto square = file + rank * chess_constants::col_count_;
 		result |= 0x1ull << square;		
 	}
 	return result;

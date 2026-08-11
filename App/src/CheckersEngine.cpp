@@ -19,8 +19,8 @@
 
 void CheckersEngine::Init() noexcept
 {
-	SetBoard(Sides::kWhite, Pieces::kQueen, 0x1ull << 62);
-	SetBoard(Sides::kBlack, Pieces::kQueen, 0x1ull << 17-9 | 0x1ull << (17+9*2-9) | 0x1ull << (17+9*4));
+	SetBoard(Sides::kWhite, Pieces::kQueen, 0x1ull << 50);
+	SetBoard(Sides::kBlack, Pieces::kQueen, 0x1ull << 22 | 0x1ull << 15 +7*3);
 
 	CacheDiagonalRays();
 
@@ -431,9 +431,9 @@ bitboard CheckersEngine::GetQueenCaptures(Sides side) const noexcept
 		const auto i = std::countr_zero(queen_bb);
 		queen_bb = core::utils::ClearBit(queen_bb, i);
 		//result |= GetMaskedRayCaptures(DiagonalDirections::kNorthEast, i, blockers);
-		//result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, blockers);
+		result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, blockers);
 		//result |= GetMaskedRayCaptures(DiagonalDirections::kSouthEast, i, blockers);
-		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, blockers);
+		//result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, blockers);
 	}
 	return result;
 }
@@ -460,7 +460,7 @@ bitboard CheckersEngine::GenerateDiagonalRays(DiagonalDirections dir, size_t ind
 	{
 		if (   (dir == DiagonalDirections::kNorthWest && !(rank < chess_constants::row_count_ - 1 && file > 0))
 			|| (dir == DiagonalDirections::kNorthEast && !(rank < chess_constants::row_count_ - 1 && file < chess_constants::col_count_ - 1))
-			|| (dir == DiagonalDirections::kSouthEast && !(rank > 0 && file > chess_constants::col_count_ - 1))
+			|| (dir == DiagonalDirections::kSouthEast && !(rank > 0 && file < chess_constants::col_count_ - 1))
 			|| (dir == DiagonalDirections::kSouthWest && !(rank > 0 && file > 0)))
 		{
 			break;

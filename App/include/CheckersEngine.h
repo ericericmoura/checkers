@@ -29,7 +29,7 @@ private:
 
 	ray_list diagonal_rays_{};
 
-	Sides current_team_ = Sides::kBlack;
+	Sides current_team_ = Sides::kWhite;
 
 	bitboard available_pawn_captures_  = 0;
 	bitboard available_queen_captures_ = 0;

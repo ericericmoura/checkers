@@ -59,8 +59,9 @@ private:
 	bitboard GetMaskedRayAttacks (DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
 	bitboard GetMaskedRayCaptures(DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
 
-	bitboard CheckForCaptures(Sides side) noexcept;
-	bitboard GetQueenCaptures(Sides side) const noexcept;
+	void UpdatePossibleCaptures(Sides side) noexcept;
+	
+	bitboard GetQueenCaptures(Sides side) const noexcept;	
 
 	void CacheDiagonalRays() noexcept;
 	bitboard GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept;

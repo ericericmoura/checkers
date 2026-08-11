@@ -15,11 +15,12 @@
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
 #include "Utils/ChessUtils.h"
+#include "Utils/DirectionUtils.h"
 
 void CheckersEngine::Init() noexcept
 {
-	SetBoard(Sides::kWhite, Pieces::kQueen, 0x0002000800004000);
-	SetBoard(Sides::kBlack, Pieces::kQueen, 0x1ull << 56);
+	SetBoard(Sides::kWhite, Pieces::kQueen, 0x0002000800004000 | 0x1ull << 17);
+	SetBoard(Sides::kBlack, Pieces::kQueen, 0x1ull << 26);
 
 	CacheDiagonalRays();
 
@@ -101,9 +102,7 @@ void CheckersEngine::FinishTurn() noexcept
 		? Sides::kBlack
 		: Sides::kWhite;
 
-	available_pawn_captures_ = 0;
-
-	available_pawn_captures_ = CheckForCaptures(current_team_);
+	UpdatePossibleCaptures(current_team_);
 }
 
 bool CheckersEngine::CapturePiece(size_t from, size_t to) noexcept
@@ -314,7 +313,7 @@ bitboard CheckersEngine::GetMaskedRayAttacks(DiagonalDirections dir, size_t i, b
 	if (mask == 0 || std::popcount(mask) <= 1)
 	{
 		return attacks;
-	}	
+	}
 
 	auto mask_copy = mask;
 	size_t first_blocker_index  = static_cast<size_t>(chess_constants::total_squares_-1) - std::countl_zero(mask);
@@ -332,46 +331,69 @@ bitboard CheckersEngine::GetMaskedRayAttacks(DiagonalDirections dir, size_t i, b
 
 bitboard CheckersEngine::GetMaskedRayCaptures(DiagonalDirections dir, size_t i, bitboard blockers) const noexcept
 {
-	//bitboard captures = 0;
+	bitboard captures = 0;
 
-	//const auto rays = diagonal_rays_[static_cast<int>(dir)][i];
-	//const auto mask = rays & blockers;
+	const auto rays = diagonal_rays_[static_cast<int>(dir)][i];
+	const auto mask = rays & blockers;
 
-	//captures |= rays;
-	//if (mask == 0 || std::popcount(mask) <= 1)
-	//{
-	//	return captures;
-	//}	
+	captures |= rays;
+	captures &= ~blockers;
+	if (mask == 0)
+	{
+		return 0;
+	}	
+	if (std::popcount(mask) == 1)
+	{
+		return captures;
+	}
 
-	//auto mask_copy = mask;
-	//size_t first_blocker_index  = static_cast<size_t>(chess_constants::col_count_) - std::countl_zero(mask);
-	//mask_copy = core::utils::ClearBit(mask, first_blocker_index);
-	//size_t second_blocker_index = static_cast<size_t>(chess_constants::col_count_) - std::countl_zero(mask_copy);
+	size_t first_blocker_index  = std::countr_zero(mask);	
+	auto mask_copy = core::utils::ClearBit(mask, first_blocker_index);
+	size_t second_blocker_index = std::countr_zero(mask_copy);
 
-	//if (dir == DiagonalDirections::kNorthEast || dir == DiagonalDirections::kNorthWest)
-	//{
-	//	size_t first_blocker_index  = std::countr_zero(mask);
-	//	mask_copy = core::utils::ClearBit(mask, first_blocker_index);
-	//	size_t second_blocker_index = std::countr_zero(mask_copy);
-	//}
+	if (dir == DiagonalDirections::kNorthEast || dir == DiagonalDirections::kNorthWest)
+	{
+		size_t first_blocker_index  = static_cast<size_t>(chess_constants::total_squares_) - std::countl_zero(mask);
+		mask_copy = core::utils::ClearBit(mask, first_blocker_index);
+		size_t second_blocker_index = static_cast<size_t>(chess_constants::total_squares_) - std::countl_zero(mask_copy);
+	}
 
-	//captures &= ~diagonal_rays_[static_cast<int>(dir)][blocker_index];
-	//return captures;
+	const auto opposite_ray_direction = utils::directions::GetOpositeDirection(dir);
+	captures &= ~diagonal_rays_[static_cast<int>(opposite_ray_direction)][first_blocker_index];
 
-	return bitboard();
+	const auto is_there_a_second_blocker = second_blocker_index < 63;
+	if (is_there_a_second_blocker)
+	{
+		captures &= ~diagonal_rays_[static_cast<int>(dir)][second_blocker_index];
+	}
+	return captures;
 }
 
-bitboard CheckersEngine::CheckForCaptures(Sides side) noexcept
+void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
 {
-	auto pawn_captures  = utils::pawn::GetPawnCaptures(side, black_bb_, white_bb_, GetBoard(side, Pieces::kPawn));
-	//auto queen_captures = GetQueenCaptures(side);
-
-	return pawn_captures/* | queen_captures*/;
+	available_pawn_captures_  = utils::pawn::GetPawnCaptures(side, black_bb_, white_bb_, GetBoard(side, Pieces::kPawn));
+	
+	available_queen_captures_ = GetQueenCaptures(side);
 }
 
 bitboard CheckersEngine::GetQueenCaptures(Sides side) const noexcept
 {
-	return bitboard();
+	bitboard result = 0;
+
+	auto queen_bb = GetBoard(side, Pieces::kQueen);
+	while (queen_bb > 0)
+	{
+		const auto i = std::countr_zero(queen_bb);
+		queen_bb = core::utils::ClearBit(queen_bb, i);
+		result |= GetMaskedRayCaptures(DiagonalDirections::kNorthEast, i, white_bb_ | black_bb_);
+		result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, white_bb_ | black_bb_);
+		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthEast, i, white_bb_ | black_bb_);
+		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, white_bb_ | black_bb_);
+	}
+
+	utils::LogBitboardWithContrast(result, 'C');
+
+	return result;
 }
 
 void CheckersEngine::CacheDiagonalRays() noexcept

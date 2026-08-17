@@ -21,8 +21,9 @@ void CheckersEngine::Init() noexcept
 {
 	CacheDiagonalRays();
 
-	SetBoard(Sides::kWhite, Pieces::kPawn, 0x1ull << 8);
-	SetBoard(Sides::kBlack, Pieces::kPawn, 0x1ull << 8+9 | 0x1ull << 8 + 9 * 3 | 0x1ull << 8 + 9 * 5);
+	SetBoard(Sides::kWhite, Pieces::kPawn , 0x0001000000402011);
+	SetBoard(Sides::kBlack, Pieces::kPawn , 0x2A50000080000000);
+	SetBoard(Sides::kBlack, Pieces::kQueen, 0x1ull << 2);
 
 	FinishTurn();
 }
@@ -66,6 +67,10 @@ void CheckersEngine::Print() const noexcept
 
 void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 {
+	if (game_over_)
+	{
+		return;
+	}	
 	if (cmd.length() != 4)
 	{
 		core::debugging::LogError("Invalid checkers command.");
@@ -82,7 +87,8 @@ void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 		return;
 	}
 
-	if (available_pawn_captures_ != 0 && !core::utils::IsBitSet(available_pawn_captures_, second_i.value()))
+	if (available_pawn_captures_  != 0 && !core::utils::IsBitSet(available_pawn_captures_ , second_i.value()) ||
+		available_queen_captures_ != 0 && !core::utils::IsBitSet(available_queen_captures_, second_i.value()))
 	{
 		core::debugging::LogError("You are required to capture a piece.");
 		return;
@@ -93,12 +99,25 @@ void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 	{
 		return;
 	}	
-	last_played_piece_to_   = second_i.value();
+	last_played_piece_to_  = second_i.value();
 	FinishTurn();
 }
 
 void CheckersEngine::FinishTurn() noexcept
 {
+	if (black_bb_ == 0)
+	{
+		fmt::println("CONGRATS! Black won the game!");
+		game_over_ = true;
+		return;
+	}
+	if (white_bb_ == 0)
+	{
+		fmt::println("CONGRATS! White won the game!");
+		game_over_ = true;
+		return;
+	}
+
 	available_pawn_captures_  = 0;
 	available_queen_captures_ = 0;
 
@@ -111,13 +130,11 @@ void CheckersEngine::FinishTurn() noexcept
 	}
 
 	UpdatePossibleCaptures(current_team_);
-
-	utils::LogBitboardWithContrast(available_pawn_captures_, 'C');
 }
 
 bool CheckersEngine::CheckForCombos() const noexcept
 {
-	if (!last_played_piece_to_.has_value())
+	if (!last_played_piece_to_.has_value() || !just_captured_piece_)
 	{
 		return false;
 	}
@@ -224,20 +241,32 @@ bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 		core::debugging::LogError("Invalid movement.");
 		return false;
 	}
-	auto captured = true;
+	auto captured = false;
 	if (available_captures != 0)
 	{
 		captured = CapturePiece(from, to);
+		just_captured_piece_ = true;
 	}
-	if (!captured)
+	if (available_captures != 0 && !captured)
 	{
 		core::debugging::LogError("Invalid capture.");
 		return false;
-	}
+	}	
 	auto board = GetBoard(side.value(), type.value());
 	board = core::utils::ClearBit(board, from);
 	board = core::utils::SetBit  (board, to  );
 	SetBoard(side.value(), type.value(), board);
+
+	const auto row = to / chess_constants::col_count_;
+
+	if (type == Pieces::kPawn && ((side == Sides::kWhite && row == chess_constants::row_count_ - 1) || (side == Sides::kBlack && row == 0)))
+	{
+		SetBoard(side.value(), type.value()  , core::utils::ClearBit(GetBoard(side.value(), type.value()), to));
+		SetBoard(side.value(), Pieces::kQueen, core::utils::SetBit  (GetBoard(side.value(), type.value()), to));
+	}
+
+	just_captured_piece_ = captured;
+
 	return true;
 }
 
@@ -348,9 +377,6 @@ bitboard CheckersEngine::GetPossibleMovementsForQueen(Sides side, size_t i) cons
 	attacks |= GetMaskedRayAttacks(DiagonalDirections::kNorthEast, i, blockers);
 	attacks |= GetMaskedRayAttacks(DiagonalDirections::kSouthWest, i, blockers);
 	attacks |= GetMaskedRayAttacks(DiagonalDirections::kSouthEast, i, blockers);
-
-	fmt::print("Queen Movements:");
-	utils::LogBitboardWithContrast(attacks, 'A');
 
 	return attacks;
 }

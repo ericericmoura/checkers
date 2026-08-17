@@ -23,6 +23,9 @@ public:
 	void ExecuteCommand(std::string cmd) noexcept;
 
 private:
+	bool game_over_ = false;
+	bool just_captured_piece_ = false;
+
 	bitboard_list bitboards_{};
 
 	bitboard white_bb_{};

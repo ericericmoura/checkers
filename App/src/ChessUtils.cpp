@@ -72,7 +72,7 @@ std::optional<size_t> utils::pawn::CapturePieceWithPawn(size_t from, size_t to, 
 	const auto distance_y = std::abs(static_cast<int>(from_col) - static_cast<int>(to_col));
 	const auto distance_x = std::abs(static_cast<int>(from_row) - static_cast<int>(to_row));
 
-	if (distance_y != 1 || distance_x != 1)
+	if (distance_y != 2 || distance_x != 2)
 	{
 		return false;
 	}
@@ -136,4 +136,9 @@ bitboard utils::pawn::GetPawnCaptures(Sides side, bitboard black_bb, bitboard wh
 	captures |= moved_north_west_mask & ~(black_bb | white_bb);
 
 	return captures;
+}
+
+bitboard utils::pawn::GetPawnCaptures(Sides side, bitboard black_bb, bitboard white_bb, bitboard pawns, size_t pawn_i) noexcept
+{
+	return GetPawnCaptures(side, black_bb, white_bb, pawns & (0x1ull << pawn_i));
 }

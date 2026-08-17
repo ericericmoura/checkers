@@ -20,6 +20,7 @@ namespace pawn
 bitboard GetPossibleMovesForPawn(Sides side, size_t index) noexcept;
 std::optional<size_t> CapturePieceWithPawn(size_t from, size_t to, VerticalDirections dir_y) noexcept;
 bitboard GetPawnCaptures(Sides side, bitboard black_bb, bitboard white_bb, bitboard pawns) noexcept;
+bitboard GetPawnCaptures(Sides side, bitboard black_bb, bitboard white_bb, bitboard pawns, size_t pawn_i) noexcept;
 
 } // namespace pawn
 

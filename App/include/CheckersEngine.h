@@ -24,6 +24,7 @@ public:
 
 private:
 	bitboard_list bitboards_{};
+
 	bitboard white_bb_{};
 	bitboard black_bb_{};
 
@@ -36,7 +37,10 @@ private:
 
 	bitboard available_queen_captures_ = 0;
 
+	std::optional<size_t> last_played_piece_to_ = {};
+
 	void FinishTurn() noexcept;
+	bool CheckForCombos() const noexcept;
 
 	bool CapturePiece(size_t from, size_t to) noexcept;
 	std::optional<size_t> CapturePieceWithQueen(size_t from, size_t to, VerticalDirections dir_y) const noexcept;
@@ -62,8 +66,8 @@ private:
 	bitboard GetMaskedRayCaptures(DiagonalDirections dir, size_t i, bitboard blockers, bitboard allies) const noexcept;
 
 	void UpdatePossibleCaptures(Sides side) noexcept;
-	
 	void UpdateQueenCaptures(Sides side) noexcept;
+	bitboard GetCapturesForQueen(Sides side, size_t i) const noexcept;
 
 	void CacheDiagonalRays() noexcept;
 	bitboard GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept;

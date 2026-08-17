@@ -21,6 +21,9 @@ void CheckersEngine::Init() noexcept
 {
 	CacheDiagonalRays();
 
+	SetBoard(Sides::kWhite, Pieces::kPawn, 0x1ull << 8);
+	SetBoard(Sides::kBlack, Pieces::kPawn, 0x1ull << 8+9 | 0x1ull << 8 + 9 * 3 | 0x1ull << 8 + 9 * 5);
+
 	FinishTurn();
 }
 
@@ -89,23 +92,46 @@ void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 	if (!success_moving)
 	{
 		return;
-	}
+	}	
+	last_played_piece_to_   = second_i.value();
 	FinishTurn();
 }
 
 void CheckersEngine::FinishTurn() noexcept
 {
-	current_team_ = current_team_ == Sides::kWhite
-		? Sides::kBlack
-		: Sides::kWhite;
-
 	available_pawn_captures_  = 0;
 	available_queen_captures_ = 0;
 
+	const auto is_combo = CheckForCombos();
+	if (!is_combo)
+	{
+		current_team_ = current_team_ == Sides::kWhite
+			? Sides::kBlack
+			: Sides::kWhite;
+	}
+
 	UpdatePossibleCaptures(current_team_);
 
-	fmt::print("\n\nAvailable Queen Captures for team {}", current_team_ == Sides::kBlack ? "black" : "white");
-	utils::LogBitboardWithContrast(available_queen_captures_, 'C');
+	utils::LogBitboardWithContrast(available_pawn_captures_, 'C');
+}
+
+bool CheckersEngine::CheckForCombos() const noexcept
+{
+	if (!last_played_piece_to_.has_value())
+	{
+		return false;
+	}
+	const auto type = GetPieceTypeByIndex(last_played_piece_to_.value());
+	bitboard captures = 0;
+	if (type == Pieces::kPawn)
+	{
+		captures = utils::pawn::GetPawnCaptures(current_team_, black_bb_, white_bb_, GetBoard(current_team_, Pieces::kPawn), last_played_piece_to_.value());
+	}
+	else
+	{
+		captures = GetCapturesForQueen(current_team_, last_played_piece_to_.value());
+	}
+	return captures != 0;
 }
 
 bool CheckersEngine::CapturePiece(size_t from, size_t to) noexcept
@@ -428,6 +454,20 @@ void CheckersEngine::UpdateQueenCaptures(Sides side) noexcept
 		available_queen_captures_ |= result;
 		queen_captures_list_[i]    = result;
 	}	
+}
+
+bitboard CheckersEngine::GetCapturesForQueen(Sides side, size_t i) const noexcept
+{
+	const auto blockers = side == Sides::kWhite ? black_bb_ : white_bb_;
+	const auto allies   = side == Sides::kWhite ? white_bb_ : black_bb_;
+
+	bitboard result = 0;
+	result |= GetMaskedRayCaptures(DiagonalDirections::kNorthEast, i, blockers, allies);
+	result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, blockers, allies);
+	result |= GetMaskedRayCaptures(DiagonalDirections::kSouthEast, i, blockers, allies);
+	result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, blockers, allies);
+
+	return result;
 }
 
 void CheckersEngine::CacheDiagonalRays() noexcept

@@ -29,9 +29,11 @@ private:
 
 	ray_list diagonal_rays_{};
 
-	Sides current_team_ = Sides::kWhite;
+	Sides current_team_ = Sides::kBlack;
 
 	bitboard available_pawn_captures_  = 0;
+	std::array<bitboard, chess_constants::total_squares_> queen_captures_list_ = {};
+
 	bitboard available_queen_captures_ = 0;
 
 	void FinishTurn() noexcept;
@@ -57,11 +59,11 @@ private:
 	bitboard GetPossibleMovementsForQueen(Sides side, size_t i) const noexcept;
 
 	bitboard GetMaskedRayAttacks (DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
-	bitboard GetMaskedRayCaptures(DiagonalDirections dir, size_t i, bitboard blockers) const noexcept;
+	bitboard GetMaskedRayCaptures(DiagonalDirections dir, size_t i, bitboard blockers, bitboard allies) const noexcept;
 
 	void UpdatePossibleCaptures(Sides side) noexcept;
 	
-	bitboard GetQueenCaptures(Sides side) const noexcept;	
+	void UpdateQueenCaptures(Sides side) noexcept;
 
 	void CacheDiagonalRays() noexcept;
 	bitboard GenerateDiagonalRays(DiagonalDirections dir, size_t index) const noexcept;

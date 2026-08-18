@@ -33,11 +33,9 @@ private:
 
 	ray_list diagonal_rays_{};
 
-	Sides current_team_ = Sides::kBlack;
+	Sides current_team_ = Sides::kWhite;
 
 	bitboard available_pawn_captures_  = 0;
-	std::array<bitboard, chess_constants::total_squares_> queen_captures_list_ = {};
-
 	bitboard available_queen_captures_ = 0;
 
 	std::optional<size_t> last_played_piece_to_ = {};

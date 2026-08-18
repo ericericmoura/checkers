@@ -19,11 +19,10 @@
 
 void CheckersEngine::Init() noexcept
 {
-	CacheDiagonalRays();
+	CacheDiagonalRays();	
 
-	SetBoard(Sides::kWhite, Pieces::kPawn , 0x0001000000402011);
-	SetBoard(Sides::kBlack, Pieces::kPawn , 0x2A50000080000000);
-	SetBoard(Sides::kBlack, Pieces::kQueen, 0x1ull << 2);
+	SetBoard(Sides::kWhite, Pieces::kPawn , 0x0000020000402011);
+	SetBoard(Sides::kBlack, Pieces::kPawn , 0x2A50000080000000 | 0x1ull << 9);
 
 	FinishTurn();
 }
@@ -261,8 +260,8 @@ bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 
 	if (type == Pieces::kPawn && ((side == Sides::kWhite && row == chess_constants::row_count_ - 1) || (side == Sides::kBlack && row == 0)))
 	{
-		SetBoard(side.value(), type.value()  , core::utils::ClearBit(GetBoard(side.value(), type.value()), to));
-		SetBoard(side.value(), Pieces::kQueen, core::utils::SetBit  (GetBoard(side.value(), type.value()), to));
+		SetBoard(side.value(), type.value()  , core::utils::ClearBit(GetBoard(side.value(), type.value())  , to));
+		SetBoard(side.value(), Pieces::kQueen, core::utils::SetBit  (GetBoard(side.value(), Pieces::kQueen), to));
 	}
 
 	just_captured_piece_ = captured;
@@ -478,7 +477,6 @@ void CheckersEngine::UpdateQueenCaptures(Sides side) noexcept
 		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, blockers, allies);
 
 		available_queen_captures_ |= result;
-		queen_captures_list_[i]    = result;
 	}	
 }
 

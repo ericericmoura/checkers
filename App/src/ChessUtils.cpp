@@ -74,7 +74,7 @@ std::optional<size_t> utils::pawn::CapturePieceWithPawn(size_t from, size_t to, 
 
 	if (distance_y != 2 || distance_x != 2)
 	{
-		return false;
+		return {};
 	}
 
 	const auto is_east = from_col > to_col;

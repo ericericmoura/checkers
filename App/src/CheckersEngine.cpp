@@ -21,8 +21,9 @@ void CheckersEngine::Init() noexcept
 {
 	CacheDiagonalRays();	
 
-	SetBoard(Sides::kWhite, Pieces::kPawn , 0x0000020000402011);
-	SetBoard(Sides::kBlack, Pieces::kPawn , 0x2A50000080000000 | 0x1ull << 9);
+	SetBoard(Sides::kWhite, Pieces::kQueen, 0x0010000000000000);
+	SetBoard(Sides::kWhite, Pieces::kPawn,  0x0000000000442851);
+	SetBoard(Sides::kBlack, Pieces::kPawn,  0x82000A0002000000);
 
 	FinishTurn();
 }
@@ -80,14 +81,24 @@ void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 	const auto first_i  = GetIndexFromNotation(commands.first );
 	const auto second_i = GetIndexFromNotation(commands.second);			
 
+	if (last_played_piece_to_.has_value() && last_played_piece_to_.value() != first_i)
+	{
+		core::debugging::LogError("You are in a combo, you must move the previous piece.");
+		return;
+	}
+
 	if (!first_i.has_value() || !second_i.has_value())
 	{
 		core::debugging::LogError("Invalid checkers command.");
 		return;
 	}
 
-	if (available_pawn_captures_  != 0 && !core::utils::IsBitSet(available_pawn_captures_ , second_i.value()) ||
-		available_queen_captures_ != 0 && !core::utils::IsBitSet(available_queen_captures_, second_i.value()))
+	const auto must_capture_with_pawn = GetPieceTypeByIndex(first_i.value()) == Pieces::kPawn && available_pawn_captures_ != 0;
+
+	const auto must_capture_with_queen = GetPieceTypeByIndex(first_i.value()) == Pieces::kQueen && available_queen_captures_ != 0;
+
+	if (   (must_capture_with_pawn  && !core::utils::IsBitSet(available_pawn_captures_, second_i .value())) 
+		|| (must_capture_with_queen && !core::utils::IsBitSet(available_queen_captures_, second_i.value())))
 	{
 		core::debugging::LogError("You are required to capture a piece.");
 		return;
@@ -126,9 +137,11 @@ void CheckersEngine::FinishTurn() noexcept
 		current_team_ = current_team_ == Sides::kWhite
 			? Sides::kBlack
 			: Sides::kWhite;
+
+		last_played_piece_to_ = {};
 	}
 
-	UpdatePossibleCaptures(current_team_);
+	UpdatePossibleCaptures(current_team_);	
 }
 
 bool CheckersEngine::CheckForCombos() const noexcept
@@ -210,11 +223,11 @@ std::optional<size_t> CheckersEngine::CapturePieceWithQueen(size_t from, size_t 
 	size_t enemy_i = {};
 	if (dir_y == VerticalDirections::kUp)
 	{
-		enemy_i = static_cast<size_t>(chess_constants::total_squares_) - std::countl_zero(blockers);
+		enemy_i = std::countr_zero(blockers);
 	}
 	else
 	{
-		enemy_i = std::countr_zero(blockers);
+		enemy_i = static_cast<size_t>(chess_constants::total_squares_) - 1 - std::countl_zero(blockers);
 	}
 	return enemy_i;
 }
@@ -244,7 +257,7 @@ bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 	if (available_captures != 0)
 	{
 		captured = CapturePiece(from, to);
-		just_captured_piece_ = true;
+		just_captured_piece_ = captured;
 	}
 	if (available_captures != 0 && !captured)
 	{

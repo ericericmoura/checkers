@@ -18,7 +18,10 @@ int main()
 		checkers_engine_.Print();
 		std::cout << "\nEnter command:\n";
 		std::cout << "  Q: quit\n  Move example: a1b2\n-";
-		std::cin >> input;
+		if (!(std::cin >> input))
+		{
+			return 0;
+		}
 
 		if (input == "Q")
 		{

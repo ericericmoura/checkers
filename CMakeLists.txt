@@ -39,5 +39,5 @@ FetchContent_Declare(SFML
 FetchContent_MakeAvailable(SFML)
 
 # Add Libraries
-add_subdirectory(core)
+add_subdirectory(Core)
 add_subdirectory(App)

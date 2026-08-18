@@ -51,7 +51,7 @@ void core::Engine::Run()
 		}
 		auto delta_time = time_.restart();
 		elapsed_time_ += delta_time;
-		auto delta = elapsed_time_.asSeconds();
+		auto delta = delta_time.asSeconds();
 
 		for (auto& [id, layer] : layer_stack_)
 		{

@@ -1,4 +1,4 @@
-#include "Utils/ChessUtils.h"
+#include "Utils/CheckersUtils.h"
 
 #include <string>
 #include <iostream>
@@ -9,20 +9,25 @@
 #include <fmt/color.h>
 
 #include "Core/Utils/BitUtils.h"
-#include "Constants/ChessConstants.h"
+#include "Constants/CheckersConstants.h"
 #include "Enums/Sides.h"
 #include "Enums/Directions.h"
 
-std::string utils::BitboardToString(bitboard board, char symbol) noexcept
+bool utils::checkers::IsIndexOutOfBounds(size_t index) noexcept
+{
+	return index < 0 || index >= checkers_constants::total_squares_;
+}
+
+std::string utils::checkers::BitboardToString(bitboard board, char symbol) noexcept
 {
 	std::string output = "\n";
-	for (int rank = chess_constants::row_count_ - 1; rank >= 0; --rank)
+	for (int rank = checkers_constants::row_count_ - 1; rank >= 0; --rank)
 	{
 		output += (rank + 1) + '0';
 		output += "  ";
-		for (int file = 0; file < chess_constants::col_count_; ++file)
+		for (int file = 0; file < checkers_constants::col_count_; ++file)
 		{
-			const auto index = file + rank * chess_constants::col_count_;
+			const auto index = file + rank * checkers_constants::col_count_;
 			if (!core::utils::IsBitSet(board, index))
 			{
 				output += '0';
@@ -38,7 +43,7 @@ std::string utils::BitboardToString(bitboard board, char symbol) noexcept
 	return output;
 }
 
-void utils::LogBitboardWithContrast(bitboard board, char symbol_to_highlight) noexcept
+void utils::checkers::LogBitboardWithContrast(bitboard board, char symbol_to_highlight) noexcept
 {
 	const auto textboard = BitboardToString(board, symbol_to_highlight);
 	std::cout << "\n";
@@ -53,7 +58,7 @@ void utils::LogBitboardWithContrast(bitboard board, char symbol_to_highlight) no
 	}
 }
 
-bitboard utils::pawn::GetPossibleMovesForPawn(Sides side, size_t index) noexcept
+bitboard utils::checkers::pawn::GetPossibleMovesForPawn(Sides side, size_t index) noexcept
 {
 	bitboard result = 0;
 	const auto sign = side == Sides::kWhite ? +1 : -1;
@@ -62,7 +67,7 @@ bitboard utils::pawn::GetPossibleMovesForPawn(Sides side, size_t index) noexcept
 	return result;
 }
 
-std::optional<size_t> utils::pawn::CapturePieceWithPawn(size_t from, size_t to, VerticalDirections dir_y) noexcept
+std::optional<size_t> utils::checkers::pawn::CapturePieceWithPawn(size_t from, size_t to, VerticalDirections dir_y) noexcept
 {
 	const auto from_col = from % 8;
 	const auto from_row = from / 8;
@@ -100,10 +105,10 @@ std::optional<size_t> utils::pawn::CapturePieceWithPawn(size_t from, size_t to, 
 	return enemy_i;
 }
 
-bitboard utils::pawn::GetPawnCaptures(Sides side, bitboard black_bb, bitboard white_bb, bitboard pawns) noexcept
+bitboard utils::checkers::pawn::GetPawnCaptures(Sides side, bitboard black_bb, bitboard white_bb, bitboard pawns) noexcept
 {
-	const auto east_pawns = (pawns & ~(chess_constants::file_h | chess_constants::file_g));
-	const auto west_pawns = (pawns & ~(chess_constants::file_a | chess_constants::file_b));
+	const auto east_pawns = (pawns & ~(checkers_constants::file_h | checkers_constants::file_g));
+	const auto west_pawns = (pawns & ~(checkers_constants::file_a | checkers_constants::file_b));
 
 	auto opposite_side_bb = black_bb;
 	auto north_east = east_pawns << 9;
@@ -138,7 +143,7 @@ bitboard utils::pawn::GetPawnCaptures(Sides side, bitboard black_bb, bitboard wh
 	return captures;
 }
 
-bitboard utils::pawn::GetPawnCaptures(Sides side, bitboard black_bb, bitboard white_bb, bitboard pawns, size_t pawn_i) noexcept
+bitboard utils::checkers::pawn::GetPawnCaptures(Sides side, bitboard black_bb, bitboard white_bb, bitboard pawns, size_t pawn_i) noexcept
 {
 	return GetPawnCaptures(side, black_bb, white_bb, pawns & (0x1ull << pawn_i));
 }

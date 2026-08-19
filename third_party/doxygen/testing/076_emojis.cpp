@@ -288,7 +288,7 @@
   @emoji cheese   @emoji :cheese: from "cheese"<br>
   @emoji cherries   @emoji :cherries: from "cherries"<br>
   @emoji cherry_blossom   @emoji :cherry_blossom: from "cherry_blossom"<br>
-  @emoji chess_pawn   @emoji :chess_pawn: from "chess_pawn"<br>
+  @emoji checkers_pawn   @emoji :checkers_pawn: from "checkers_pawn"<br>
   @emoji chestnut   @emoji :chestnut: from "chestnut"<br>
   @emoji chicken   @emoji :chicken: from "chicken"<br>
   @emoji child   @emoji :child: from "child"<br>

@@ -315,7 +315,7 @@ static struct emojiEntityInfo
   { ":cheese:",                                "&#x1f9c0;"                            },
   { ":cherries:",                              "&#x1f352;"                            },
   { ":cherry_blossom:",                        "&#x1f338;"                            },
-  { ":chess_pawn:",                            "&#x265f;"                             },
+  { ":checkers_pawn:",                            "&#x265f;"                             },
   { ":chestnut:",                              "&#x1f330;"                            },
   { ":chicken:",                               "&#x1f414;"                            },
   { ":child:",                                 "&#x1f9d2;"                            },

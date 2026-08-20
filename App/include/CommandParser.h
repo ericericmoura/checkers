@@ -21,7 +21,23 @@ struct CommandUndo
 	static constexpr std::string_view kKey = "undo";
 };
 
-using Command = std::variant<CommandMove, CommandRedo, CommandUndo>;
+struct CommandDisplayMoves
+{
+	static constexpr std::string_view kKey = "display-moves";
+	static constexpr size_t kKeySize = kKey.length();
+
+	size_t piece_index_{};
+};
+
+struct CommandDisplayCaptures
+{
+	static constexpr std::string_view kKey = "display-captures";
+	static constexpr size_t kKeySize = kKey.length();
+
+	size_t piece_index_{};
+};
+
+using Command = std::variant<CommandMove, CommandRedo, CommandUndo, CommandDisplayMoves, CommandDisplayCaptures>;
 
 namespace CommandParser
 {

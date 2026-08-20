@@ -28,7 +28,7 @@ std::string utils::checkers::BitboardToString(bitboard board, char symbol) noexc
 		for (int file = 0; file < checkers_constants::col_count_; ++file)
 		{
 			const auto index = file + rank * checkers_constants::col_count_;
-			if (!core::utils::IsBitSet(board, index))
+			if (!core::utils::bits::IsBitSet(board, index))
 			{
 				output += '0';
 				output += " ";

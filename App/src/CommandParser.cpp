@@ -1,8 +1,10 @@
 #include "CommandParser.h"
+
 #include <expected>
 #include <string>
 #include <string_view>
 #include <utility>
+#include <charconv>
 
 #include "Core/Utils/StringUtils.h"
 #include "Constants/CheckersConstants.h"
@@ -54,10 +56,52 @@ std::expected<std::pair<size_t, size_t>, std::string> GetCoordinatesFromNotation
 		});
 }
 
+std::expected<std::string_view, std::string> GetArgsFromCommand(std::string_view input, std::string_view command_key)
+{	
+	if (input.length() <= command_key.length() + 1)
+	{
+		return std::unexpected("Invalid command: no arguments were provided.");
+	}	
+	return input.substr(command_key.length() + 1, input.length());
+}
+
+std::expected<Command, std::string> ParseCommandWithArguments(std::string_view cmd)
+{
+	if (cmd.starts_with(CommandDisplayMoves::kKey))
+	{
+		return GetArgsFromCommand(cmd, CommandDisplayMoves::kKey).and_then(
+			[](const auto& args) 
+			{
+				return GetIndexFromNotation(args).and_then(
+					[](size_t i)
+					{
+						return std::expected<Command, std::string>(std::in_place, CommandDisplayMoves{ i });
+					});
+			});
+	}
+	if (cmd.starts_with(CommandDisplayCaptures::kKey))
+	{
+		return GetArgsFromCommand(cmd, CommandDisplayCaptures::kKey).and_then(
+			[](const auto& args)
+			{
+				return GetIndexFromNotation(args).and_then(
+					[](size_t i)
+					{
+						return std::expected<Command, std::string>(std::in_place, CommandDisplayCaptures{ i });
+					});
+			});
+	}
+	return std::unexpected("Non-existent command.");
+}
+
 } // anonymous namespace
 
 std::expected<Command, std::string> CommandParser::ParseCommand(std::string_view cmd) noexcept
 {
+	if (cmd.length() > 4)
+	{
+		return ParseCommandWithArguments(cmd);
+	}
 	if (cmd.length() != 4)
 	{
 		return std::unexpected("Non-existent command.");

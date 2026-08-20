@@ -6,6 +6,8 @@ namespace core
 {
 namespace utils
 {
+namespace bits
+{
 
 template <typename T>
 concept UnsignedIntegral = std::is_unsigned_v<T> && std::is_integral_v<T>;
@@ -34,5 +36,6 @@ constexpr bool IsBitSet(T integer, size_t index)
 	return GetBit(integer, index) > 0;
 }
 
+} // namespace bits
 } // namespace utils
 } // namespace core

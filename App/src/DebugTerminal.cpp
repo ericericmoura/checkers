@@ -9,6 +9,7 @@
 
 #include "Utils/CheckersUtils.h"
 #include "MoveGenerator.h"
+#include <Enums/Sides.h>
 
 int main()
 {
@@ -54,7 +55,7 @@ int main()
 		else if (auto value = std::get_if<CommandDisplayMoves>(&parse_result.value()))
 		{			
 			fmt::println("\nDisplaying moves:");
-			utils::checkers::LogBitboardWithContrast(mv_gen.GetMovementsForQueen(value->piece_index_, 0, 0), 'M');
+			utils::checkers::LogBitboardWithContrast(mv_gen.GetMovementsForPawn(value->piece_index_, Sides::kWhite), 'P');
 		}		
 		else if (auto value = std::get_if<CommandDisplayCaptures>(&parse_result.value()))
 		{

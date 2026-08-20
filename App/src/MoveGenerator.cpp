@@ -1,16 +1,14 @@
 #include "MoveGenerator.h"
 
 #include <optional>
-#include <expected>
-#include <string>
 #include <bit>
 
 #include "Core/Utils/BitUtils.h"
 #include "Enums/Directions.h"
-#include "Enums/Pieces.h"
 #include "Enums/Sides.h"
 #include "Constants/CheckersConstants.h"
 #include "Utils/DirectionUtils.h"
+#include "Utils/CheckersUtils.h"
 #include "CheckersTypes.h"
 
 MoveGenerator::MoveGenerator() noexcept
@@ -40,32 +38,34 @@ checkers_types::bitboard MoveGenerator::GetCapturesForQueen(size_t i, checkers_t
 	return result;
 }
 
-checkers_types::bitboard MoveGenerator::GetMovementsForPawn(size_t i, Sides side) const noexcept
+checkers_types::bitboard MoveGenerator::GetMovementsForPawn(size_t i, Sides side) noexcept
 {
+	if (utils::checkers::IsIndexOutOfBounds(i))
+	{
+		return {};
+	}
+	const auto pawn_bb = 0x1ull << i;
+	const auto pawn_east_excluded_bb = pawn_bb & ~(checkers_constants::file_h);
+	const auto pawn_west_excluded_bb = pawn_bb & ~(checkers_constants::file_a);
+
 	checkers_types::bitboard result = 0;
-	const auto sign = side == Sides::kWhite ? +1 : -1;
-	result |= 0x1ull << i + 9 * static_cast<unsigned long long>(sign);
-	result |= 0x1ull << i + 7 * static_cast<unsigned long long>(sign);
+	result |= MovePawnForward(side, pawn_east_excluded_bb, 9);
+	result |= MovePawnForward(side, pawn_west_excluded_bb, 7);
 	return result;
 }
 
 checkers_types::bitboard MoveGenerator::GetCapturesForPawns(Sides side, checkers_types::bitboard allies, checkers_types::bitboard enemies, checkers_types::bitboard pawns) noexcept
 {
-	const auto ShiftFoward = [side](checkers_types::bitboard bb, int shift)
-	{
-		return side == Sides::kBlack ? bb >> shift : bb << shift;
-	};
-
 	const auto east_capable_pawns = (pawns & ~(checkers_constants::file_h | checkers_constants::file_g));
-	const auto west_capable_pawns = (pawns & ~(checkers_constants::file_a | checkers_constants::file_b));
+	const auto west_capable_pawns = (pawns & ~(checkers_constants::file_a | checkers_constants::file_b));	
 
-	const auto jumped_east = ShiftFoward(east_capable_pawns, 9) & enemies;
-	const auto jumped_west = ShiftFoward(east_capable_pawns, 7) & enemies;
+	const auto jumped_east = MovePawnForward(side, east_capable_pawns, 9) & enemies;
+	const auto jumped_west = MovePawnForward(side, east_capable_pawns, 7) & enemies;
 
 	const auto empty_squares = ~(allies | enemies);
 
-	const auto landed_east = ShiftFoward(jumped_east, 9) & empty_squares;
-	const auto landed_west = ShiftFoward(jumped_west, 7) & empty_squares;
+	const auto landed_east = MovePawnForward(side, jumped_east, 9) & empty_squares;
+	const auto landed_west = MovePawnForward(side, jumped_west, 7) & empty_squares;
 
 	return landed_east & landed_west;
 }
@@ -121,7 +121,12 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections 
 	return captures & ~blockers;
 }
 
-size_t MoveGenerator::GetFirstBlockerIndex(checkers_types::bitboard board, bool is_above) const noexcept
+checkers_types::bitboard MoveGenerator::MovePawnForward(Sides side, checkers_types::bitboard pawn, size_t shift) noexcept
+{
+	return side == Sides::kBlack ? pawn >> shift : pawn << shift;
+}
+
+size_t MoveGenerator::GetFirstBlockerIndex(checkers_types::bitboard board, bool is_above) noexcept
 {
 	return is_above
 		? static_cast<size_t>(checkers_constants::total_squares_ - 1) - std::countl_zero(board)

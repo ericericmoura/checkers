@@ -1,12 +1,16 @@
 #include "MoveGenerator.h"
 
 #include <optional>
+#include <expected>
+#include <string>
 #include <bit>
 
 #include "Core/Utils/BitUtils.h"
+#include "Enums/Directions.h"
+#include "Enums/Pieces.h"
+#include "Enums/Sides.h"
 #include "Constants/CheckersConstants.h"
 #include "Utils/DirectionUtils.h"
-#include "Enums/Directions.h"
 #include "CheckersTypes.h"
 
 MoveGenerator::MoveGenerator() noexcept
@@ -34,6 +38,41 @@ checkers_types::bitboard MoveGenerator::GetCapturesForQueen(size_t i, checkers_t
 		result |= GetMaskedRayCaptures(dir, i, blockers);
 	}
 	return result;
+}
+
+checkers_types::bitboard MoveGenerator::GetMovementsForPawn(size_t i, Sides side) const noexcept
+{
+	checkers_types::bitboard result = 0;
+	const auto sign = side == Sides::kWhite ? +1 : -1;
+	result |= 0x1ull << i + 9 * static_cast<unsigned long long>(sign);
+	result |= 0x1ull << i + 7 * static_cast<unsigned long long>(sign);
+	return result;
+}
+
+checkers_types::bitboard MoveGenerator::GetCapturesForPawns(Sides side, checkers_types::bitboard allies, checkers_types::bitboard enemies, checkers_types::bitboard pawns) noexcept
+{
+	const auto ShiftFoward = [side](checkers_types::bitboard bb, int shift)
+	{
+		return side == Sides::kBlack ? bb >> shift : bb << shift;
+	};
+
+	const auto east_capable_pawns = (pawns & ~(checkers_constants::file_h | checkers_constants::file_g));
+	const auto west_capable_pawns = (pawns & ~(checkers_constants::file_a | checkers_constants::file_b));
+
+	const auto jumped_east = ShiftFoward(east_capable_pawns, 9) & enemies;
+	const auto jumped_west = ShiftFoward(east_capable_pawns, 7) & enemies;
+
+	const auto empty_squares = ~(allies | enemies);
+
+	const auto landed_east = ShiftFoward(jumped_east, 9) & empty_squares;
+	const auto landed_west = ShiftFoward(jumped_west, 7) & empty_squares;
+
+	return landed_east & landed_west;
+}
+
+checkers_types::bitboard MoveGenerator::GetCapturesForPawn(Sides side, checkers_types::bitboard allies, checkers_types::bitboard enemies, size_t i) noexcept
+{
+	return GetCapturesForPawns(side, allies, enemies, 0x1ull << i);
 }
 
 checkers_types::bitboard MoveGenerator::GetMaskedRayMovements(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept

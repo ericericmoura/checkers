@@ -17,46 +17,36 @@ MoveGenerator::MoveGenerator() noexcept
 checkers_types::bitboard MoveGenerator::GetMovementsForQueen(size_t i, checkers_types::bitboard enemies, checkers_types::bitboard allies) const noexcept
 {
 	const auto blockers = enemies | allies;
-	
 	checkers_types::bitboard attacks = 0;
-	attacks |= GetMaskedRayMovements(DiagonalDirections::kNorthWest, i, blockers);
-	attacks |= GetMaskedRayMovements(DiagonalDirections::kNorthEast, i, blockers);
-	attacks |= GetMaskedRayMovements(DiagonalDirections::kSouthWest, i, blockers);
-	attacks |= GetMaskedRayMovements(DiagonalDirections::kSouthEast, i, blockers);
-
+	for (const auto dir : utils::directions::kDiagonalDirections)
+	{
+		attacks |= GetMaskedRayMovements(dir, i, blockers);
+	}
 	return attacks;
 }
 
 checkers_types::bitboard MoveGenerator::GetCapturesForQueen(size_t i, checkers_types::bitboard enemies, checkers_types::bitboard allies) const noexcept
 {
 	const auto blockers = enemies | allies;
-
 	checkers_types::bitboard result = 0;
-	result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, blockers);
-	result |= GetMaskedRayCaptures(DiagonalDirections::kNorthEast, i, blockers);
-	result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, blockers);
-	result |= GetMaskedRayCaptures(DiagonalDirections::kSouthEast, i, blockers);
-
+	for (const auto dir : utils::directions::kDiagonalDirections)
+	{
+		result |= GetMaskedRayCaptures(dir, i, blockers);
+	}
 	return result;
 }
 
 checkers_types::bitboard MoveGenerator::GetMaskedRayMovements(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept
 {
-	// Cast a ray from the user into the specific direction
 	const auto mask = CastRay(dir, i, blockers);
 	if (!mask.has_value())
 	{
 		return GetRay(dir, i);
 	}
 	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
+	auto first_blocker_index = GetFirstBlockerIndex(mask.value(), vertical_dir == VerticalDirections::kUp);
 
-	auto first_blocker_index = vertical_dir == VerticalDirections::kDown
-		? checkers_constants::total_squares_ - 1 - std::countl_zero(mask.value())
-		: std::countr_zero(mask.value());
-
-	// Add the rays
 	auto movements = GetRay(dir, i);
-	// Remove the rays past the first blocker
 	movements &= ~diagonal_rays_[static_cast<int>(dir)][first_blocker_index];
 	movements &= ~blockers;
 	return movements;
@@ -72,9 +62,7 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections 
 	}
 	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
 
-	const auto first_blocker_index = vertical_dir == VerticalDirections::kDown
-		? checkers_constants::total_squares_ - 1 - std::countl_zero(mask.value())
-		: std::countr_zero(mask.value());
+	const auto first_blocker_index = GetFirstBlockerIndex(mask.value(), vertical_dir == VerticalDirections::kUp);
 
 	// If there's only one blocker, return
 	if (std::popcount(mask.value()) == 1)
@@ -84,16 +72,21 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections 
 	
 	const auto mask_copy = core::utils::bits::ClearBit(mask.value(), first_blocker_index);
 
-	// Get the second blocker
-	const auto second_blocker_index = vertical_dir == VerticalDirections::kDown
-		? checkers_constants::total_squares_ - 1 - std::countl_zero(mask_copy)
-		: std::countr_zero(mask_copy);
+	// Get the second blocker	
+	const auto second_blocker_index = GetFirstBlockerIndex(mask_copy, vertical_dir == VerticalDirections::kUp);
 
 	// Add the rays from the first blocker
 	// and remove the rays past the second blocker
 	auto captures = GetRay(dir, first_blocker_index) & ~GetRay(dir, second_blocker_index);
 	// Remove the blockers
 	return captures & ~blockers;
+}
+
+size_t MoveGenerator::GetFirstBlockerIndex(checkers_types::bitboard board, bool is_above) const noexcept
+{
+	return is_above
+		? static_cast<size_t>(checkers_constants::total_squares_ - 1) - std::countl_zero(board)
+		: std::countr_zero(board);
 }
 
 std::optional<checkers_types::bitboard> MoveGenerator::CastRay(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept
@@ -120,10 +113,10 @@ void MoveGenerator::CacheDiagonalRays() noexcept
 {
 	for (size_t i = 0; i < checkers_constants::total_squares_; ++i)
 	{
-		diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthWest)][i] |= GenerateDiagonalRays(DiagonalDirections::kNorthWest, i);
-		diagonal_rays_[static_cast<int>(DiagonalDirections::kNorthEast)][i] |= GenerateDiagonalRays(DiagonalDirections::kNorthEast, i);
-		diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthWest)][i] |= GenerateDiagonalRays(DiagonalDirections::kSouthWest, i);
-		diagonal_rays_[static_cast<int>(DiagonalDirections::kSouthEast)][i] |= GenerateDiagonalRays(DiagonalDirections::kSouthEast, i);
+		for (const auto dir : utils::directions::kDiagonalDirections)
+		{
+			diagonal_rays_[static_cast<int>(dir)][i] |= GenerateDiagonalRays(dir, i);
+		}
 	}
 }
 

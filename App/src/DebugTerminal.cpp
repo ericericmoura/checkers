@@ -53,11 +53,8 @@ int main()
 		}
 		else if (auto value = std::get_if<CommandDisplayMoves>(&parse_result.value()))
 		{			
-			fmt::println("\nBlockers:");
-			utils::checkers::LogBitboardWithContrast(0x0A00, 'B');
-
 			fmt::println("\nDisplaying moves:");
-			utils::checkers::LogBitboardWithContrast(mv_gen.GetMovementsForQueen(value->piece_index_, 0x0A00, 0), 'M');
+			utils::checkers::LogBitboardWithContrast(mv_gen.GetMovementsForQueen(value->piece_index_, 0, 0), 'M');
 		}		
 		else if (auto value = std::get_if<CommandDisplayCaptures>(&parse_result.value()))
 		{

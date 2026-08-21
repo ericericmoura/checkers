@@ -3,7 +3,8 @@
 #include <optional>
 #include <string>
 #include <expected>
-#include <variant>
+#include <bit>
+#include <cassert>
 
 #include <fmt/base.h>
 
@@ -11,7 +12,6 @@
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
-#include "CommandParser.h"
 #include "CheckersTypes.h"
 
 void CheckersEngine::Print() const noexcept
@@ -81,7 +81,11 @@ std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, siz
 		just_captured_piece_ = true;
 	}
 
-	bb_manager_.MovePiece(from, to);
+	const auto move_result = bb_manager_.MovePiece(from, to);
+	if (!move_result)
+	{
+		return std::unexpected(move_result.error());
+	}
 
 	last_played_piece_to_ = to;
 	
@@ -107,6 +111,30 @@ std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetMoves(si
 		: move_generator_.GetMovementsForQueen(at, bb_manager_.GetBoard(enemy_side), bb_manager_.GetBoard(side.value()));
 
 	return moves;
+}
+
+std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetCaptures(size_t at) const noexcept
+{
+	if (!bb_manager_.IsIndexOccupied(at))
+	{
+		return std::unexpected("Invalid index: there's no piece at the specified square.");
+	}
+
+	const auto side = bb_manager_.GetSideByIndex(at);
+	if (!side.has_value())
+	{
+		return std::unexpected("Invalid index: there's no piece at the specified square.");
+	}
+	const auto enemy_side = GetEnemySide(side.value());
+
+	const auto allies  = bb_manager_.GetBoard(side.value());
+	const auto enemies = bb_manager_.GetBoard(enemy_side  );
+
+	const auto captures = bb_manager_.GetPieceTypeByIndex(at) == Pieces::kPawn
+		? move_generator_.GetCapturesForPawn(side.value(), allies, enemies, at)
+		: move_generator_.GetCapturesForQueen(at, enemies, allies);
+
+	return captures;
 }
 
 GameState CheckersEngine::FinishTurn() noexcept
@@ -188,9 +216,27 @@ std::expected<void, std::string> CheckersEngine::CapturePiece(size_t from, size_
 
 void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
 {
-	const auto allies  = bb_manager_.GetBoard(current_team_);
+	available_pawn_captures_  = 0;
+	available_queen_captures_ = 0;
+
 	const auto enemies = bb_manager_.GetBoard(GetEnemySide());
 
-	available_pawn_captures_  = move_generator_.GetCapturesForPawn (current_team_, allies, enemies, last_played_piece_to_.value());
-	available_queen_captures_ = move_generator_.GetCapturesForQueen(last_played_piece_to_.value(), enemies, allies);
+	auto allies = bb_manager_.GetBoard(current_team_);
+	while (std::popcount(allies) != 0)
+	{
+		const auto i = std::countr_zero(allies);
+		allies = core::utils::bits::ClearBit(allies, i);
+
+		const auto type = bb_manager_.GetPieceTypeByIndex(i);
+		assert(type.has_value());
+
+		if (type.value() == Pieces::kPawn)
+		{
+			available_pawn_captures_  |= move_generator_.GetCapturesForPawn (current_team_, allies, enemies, i);
+		}
+		else
+		{
+			available_queen_captures_ |= move_generator_.GetCapturesForQueen(i, enemies, allies);
+		}
+	}
 }

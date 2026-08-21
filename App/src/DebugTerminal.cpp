@@ -35,29 +35,51 @@ int main()
 			return 0;
 		}
 
-		command_parser::ParseCommand(input).transform(
-			[&engine](const auto& command)
-			{
-				if (auto value = std::get_if<CommandMove>(&command))
+		command_parser::ParseCommand(input)
+			.transform(
+				[&engine](const auto& command)
 				{
-					const auto result = engine.MovePiece(value->move_from_, value->move_to_);
-					if (!result)
+					if (auto value = std::get_if<CommandMove>(&command))
 					{
-						core::debugging::LogError("{}\n", result.error());
+						const auto result = engine.MovePiece(value->move_from_, value->move_to_);
+						if (!result)
+						{
+							core::debugging::LogError("{}\n", result.error());
+						}
+						return;
 					}
-					return;
+					if (auto value = std::get_if<CommandDisplayMoves>(&command))
+					{
+						const auto piece_moves = engine.GetMoves(value->piece_index_);
+						if (!piece_moves)
+						{
+							core::debugging::LogError("{}\n", piece_moves.error());
+							return;
+						}
+						fmt::print("\nMoves for piece at index {}:", value->piece_index_);
+						utils::checkers::LogBitboardWithContrast(piece_moves.value(), 'M');
+						return;
+					}
+					if (auto value = std::get_if<CommandDisplayCaptures>(&command))
+					{
+						const auto piece_captures = engine.GetCaptures(value->piece_index_);
+						if (!piece_captures)
+						{
+							core::debugging::LogError("{}\n", piece_captures.error());
+							return;
+						}
+						fmt::print("\nCaptures for piece at index {}:", value->piece_index_);
+						utils::checkers::LogBitboardWithContrast(piece_captures.value(), 'C');
+						return;
+					}
+					core::debugging::LogError("Invalid command: not found.");
 				}
-				if (auto value = std::get_if<CommandDisplayMoves>(&command))
+			).or_else(
+				[](const auto& error_message) -> std::expected<void, std::string>
 				{
-					const auto piece_moves = engine.GetMoves(value->piece_index_);
-					if (!piece_moves)
-					{
-						core::debugging::LogError("{}\n", piece_moves.error());
-					}
-					fmt::print("\nMoves for piece at index {}:", value->piece_index_);
-					utils::checkers::LogBitboardWithContrast(piece_moves.value(), 'M');
-					return;
+					core::debugging::LogError("{}\n", error_message);
+					return {};
 				}
-			});
+			);
 	}
 }

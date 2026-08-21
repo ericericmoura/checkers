@@ -49,8 +49,8 @@ checkers_types::bitboard MoveGenerator::GetMovementsForPawn(size_t i, Sides side
 	const auto pawn_west_excluded_bb = pawn_bb & ~(checkers_constants::file_a);
 
 	checkers_types::bitboard result = 0;
-	result |= MovePawnForward(side, pawn_east_excluded_bb, 9);
-	result |= MovePawnForward(side, pawn_west_excluded_bb, 7);
+	result |= MovePawnForward(side, pawn_east_excluded_bb, side == Sides::kBlack ? 7 : 9);
+	result |= MovePawnForward(side, pawn_west_excluded_bb, side == Sides::kBlack ? 9 : 7);
 	return result;
 }
 
@@ -59,13 +59,13 @@ checkers_types::bitboard MoveGenerator::GetCapturesForPawns(Sides side, checkers
 	const auto east_capable_pawns = (pawns & ~(checkers_constants::file_h | checkers_constants::file_g));
 	const auto west_capable_pawns = (pawns & ~(checkers_constants::file_a | checkers_constants::file_b));	
 
-	const auto jumped_east = MovePawnForward(side, east_capable_pawns, 9) & enemies;
-	const auto jumped_west = MovePawnForward(side, east_capable_pawns, 7) & enemies;
+	const auto jumped_east = MovePawnForward(side, east_capable_pawns, side == Sides::kBlack ? 7 : 9) & enemies;
+	const auto jumped_west = MovePawnForward(side, west_capable_pawns, side == Sides::kBlack ? 9 : 7) & enemies;
 
 	const auto empty_squares = ~(allies | enemies);
 
-	const auto landed_east = MovePawnForward(side, jumped_east, 9) & empty_squares;
-	const auto landed_west = MovePawnForward(side, jumped_west, 7) & empty_squares;
+	const auto landed_east = MovePawnForward(side, jumped_east, side == Sides::kBlack ? 7 : 9) & empty_squares;
+	const auto landed_west = MovePawnForward(side, jumped_west, side == Sides::kBlack ? 9 : 7) & empty_squares;
 
 	return landed_east & landed_west;
 }

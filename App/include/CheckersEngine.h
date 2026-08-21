@@ -24,7 +24,8 @@ public:
 
 	std::expected<GameState, std::string> MovePiece(size_t from, size_t to) noexcept;
 
-	std::expected<checkers_types::bitboard, std::string> GetMoves(size_t at) const noexcept;
+	std::expected<checkers_types::bitboard, std::string> GetMoves   (size_t at) const noexcept;
+	std::expected<checkers_types::bitboard, std::string> GetCaptures(size_t at) const noexcept;
 
 	Sides GetEnemySide() const noexcept;
 	static Sides GetEnemySide(Sides side) noexcept;

@@ -28,73 +28,127 @@ void CheckersEngine::Print() const noexcept
 	bb_manager_.Print();
 }
 
-std::expected<void, std::string> CheckersEngine::ExecuteCommand(std::string cmd) noexcept
+std::expected<GameState, std::string> CheckersEngine::ExecuteCommand(std::string cmd) noexcept
 {
-	if (game_over_)
-	{
-		return std::unexpected("The game's over.");
-	}
-	return command_parser::ParseCommand(cmd).transform(
-		[this](const auto& command)
+	return command_parser::ParseCommand(cmd).and_then(
+		[this](const auto& command) -> std::expected<GameState, std::string>
 		{
 			if (auto value = std::get_if<CommandMove>(&command))
 			{
-				MovePiece(value->move_from_, value->move_to_);
+				if (game_over_) return std::unexpected("Invalid move: the game's already over.");
+
+				return MovePiece(value->move_from_, value->move_to_);
 			}
+			return game_over_ ? GameState::kFinished : GameState::kPlaying;
 		}
 	);
 }
 
-//void CheckersEngine::FinishTurn() noexcept
-//{
-//	if (black_bb_ == 0)
-//	{
-//		fmt::println("CONGRATS! Black won the game!");
-//		game_over_ = true;
-//		return;
-//	}
-//	if (white_bb_ == 0)
-//	{
-//		fmt::println("CONGRATS! White won the game!");
-//		game_over_ = true;
-//		return;
-//	}
-//
-//	available_pawn_captures_  = 0;
-//	available_queen_captures_ = 0;
-//
-//	const auto is_combo = CheckForCombos();
-//	if (!is_combo)
-//	{
-//		current_team_ = current_team_ == Sides::kWhite
-//			? Sides::kBlack
-//			: Sides::kWhite;
-//
-//		last_played_piece_to_ = {};
-//	}
-//
-//	UpdatePossibleCaptures(current_team_);	
-//}
-//
-//bool CheckersEngine::CheckForCombos() const noexcept
-//{
-//	if (!last_played_piece_to_.has_value() || !just_captured_piece_)
-//	{
-//		return false;
-//	}
-//	const auto type = GetPieceTypeByIndex(last_played_piece_to_.value());
-//	bitboard captures = 0;
-//	if (type == Pieces::kPawn)
-//	{
-//		captures = utils::pawn::GetPawnCaptures(current_team_, black_bb_, white_bb_, GetBoard(current_team_, Pieces::kPawn), last_played_piece_to_.value());
-//	}
-//	else
-//	{
-//		captures = GetCapturesForQueen(current_team_, last_played_piece_to_.value());
-//	}
-//	return captures != 0;
-//}
-//
+Sides CheckersEngine::GetEnemySide() const noexcept
+{
+	return current_team_ == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
+}
+
+std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, size_t to) noexcept
+{	
+	if (last_played_piece_to_.has_value() && last_played_piece_to_.value() != from)
+	{
+		return std::unexpected("Invalid move: you are in a combo, you must move the previous piece.");
+	}
+
+	const auto piece_type = bb_manager_.GetPieceTypeByIndex(from);
+	const auto piece_side = bb_manager_.GetSideByIndex(from);
+
+	if (!piece_side.has_value() || !piece_type.has_value())
+	{
+		return std::unexpected("Invalid piece: it's either non-existent or invalid.");
+	}
+
+	if (piece_side != current_team_)
+	{
+		return std::unexpected("Invalid move: can't move an enemy piece.");
+	}
+
+	const auto movements = piece_type == Pieces::kPawn 
+		? move_generator_.GetMovementsForPawn (from, current_team_)
+		: move_generator_.GetMovementsForQueen(from, bb_manager_.GetBoard(GetEnemySide()), bb_manager_.GetBoard(current_team_));
+	
+	if (!core::utils::bits::IsBitSet(movements, to))
+	{
+		return std::unexpected("Invalid move: unreachable or blocked square.");
+	}
+
+	const auto captures = piece_type == Pieces::kPawn
+		? available_pawn_captures_
+		: available_queen_captures_;
+
+	const auto should_capture = captures != 0;
+	if (should_capture && !core::utils::bits::IsBitSet(captures, to))
+	{
+		return std::unexpected("Invalid move: you are required to capture a piece.");
+	}
+
+	if (should_capture)
+	{
+		just_captured_piece_ = CapturePiece(from, to);
+
+		if (!just_captured_piece_) return std::unexpected("Invalid capture.");
+	}
+
+	bb_manager_.MovePiece(from, to);
+
+	last_played_piece_to_ = to;
+	
+	return FinishTurn();
+}
+
+GameState CheckersEngine::FinishTurn() noexcept
+{
+	if (bb_manager_.GetBoard(Sides::kWhite) == 0)
+	{
+		game_over_ = true;
+		return GameState::kBlackWon;
+	}
+	if (bb_manager_.GetBoard(Sides::kBlack) == 0)
+	{
+		game_over_ = true;
+		return GameState::kWhiteWon;
+	}
+
+	available_pawn_captures_  = 0;
+	available_queen_captures_ = 0;
+
+	const auto is_combo = CheckForCombos();
+	if (!is_combo)
+	{
+		current_team_ = GetEnemySide();
+
+		last_played_piece_to_ = {};
+	}
+
+	UpdatePossibleCaptures(current_team_);
+
+	return GameState::kPlaying;
+}
+
+bool CheckersEngine::CheckForCombos() const noexcept
+{
+	if (!last_played_piece_to_.has_value() || !just_captured_piece_)
+	{
+		return false;
+	}
+	const auto type = bb_manager_.GetPieceTypeByIndex(last_played_piece_to_.value());
+
+	const auto allies  = bb_manager_.GetBoard(current_team_);
+	const auto enemies = bb_manager_.GetBoard(GetEnemySide());
+	
+	checkers_types::bitboard captures = type == Pieces::kPawn
+		? move_generator_.GetCapturesForPawn(current_team_, allies, enemies, last_played_piece_to_.value())
+		: move_generator_.GetCapturesForQueen(last_played_piece_to_.value(), enemies, allies);
+
+	return captures != 0;
+}
+
 //bool CheckersEngine::CapturePiece(size_t from, size_t to) noexcept
 //{
 //	const auto side = GetSideByIndex     (from);
@@ -164,81 +218,11 @@ std::expected<void, std::string> CheckersEngine::ExecuteCommand(std::string cmd)
 //	return enemy_i;
 //}
 
-Sides CheckersEngine::GetEnemySide() const noexcept
+void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
 {
-	return current_team_ == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
+	const auto allies  = bb_manager_.GetBoard(current_team_);
+	const auto enemies = bb_manager_.GetBoard(GetEnemySide());
+
+	available_pawn_captures_  = move_generator_.GetCapturesForPawn (current_team_, allies, enemies, last_played_piece_to_.value());
+	available_queen_captures_ = move_generator_.GetCapturesForQueen(last_played_piece_to_.value(), enemies, allies);
 }
-
-std::expected<void, std::string> CheckersEngine::MovePiece(size_t from, size_t to) noexcept
-{	
-	if (last_played_piece_to_.has_value() && last_played_piece_to_.value() != from)
-	{
-		return std::unexpected("Invalid move: you are in a combo, you must move the previous piece.");
-	}
-
-	const auto piece_type = bb_manager_.GetPieceTypeByIndex(from);
-	const auto piece_side = bb_manager_.GetSideByIndex(from);
-
-	if (!piece_side.has_value() || !piece_type.has_value())
-	{
-		return std::unexpected("Invalid piece: it's either non-existent or invalid.");
-	}
-
-	const auto captures = piece_type == Pieces::kPawn 
-		? available_pawn_captures_ 
-		: available_queen_captures_;
-	
-	const auto should_capture = captures != 0;	
-	if (should_capture && !core::utils::bits::IsBitSet(captures, to))
-	{
-		return std::unexpected("Invalid move: you are required to capture a piece.");
-	}		
-
-	if (piece_side != current_team_)
-	{
-		return std::unexpected("Invalid move: can't move an enemy piece.");
-	}
-
-	const auto movements = piece_type == Pieces::kPawn 
-		? move_generator_.GetMovementsForPawn (from, current_team_)
-		: move_generator_.GetMovementsForQueen(from, bb_manager_.GetBoard(GetEnemySide()), bb_manager_.GetBoard(current_team_));
-	
-	if (!core::utils::bits::IsBitSet(movements, to))
-	{
-		return std::unexpected("Invalid move: unreachable or blocked square.");
-	}
-
-	if (should_capture)
-	{
-		just_captured_piece_ = CapturePiece(from, to);
-	}
-	if (should_capture && !just_captured_piece_)
-	{
-		return std::unexpected("Invalid capture.");
-	}	
-	//auto board = GetBoard(side.value(), type.value());
-	//board = core::utils::ClearBit(board, from);
-	//board = core::utils::SetBit  (board, to  );
-	//SetBoard(side.value(), type.value(), board);
-
-	//const auto row = to / checkers_constants::col_count_;
-
-	//if (type == Pieces::kPawn && ((side == Sides::kWhite && row == checkers_constants::row_count_ - 1) || (side == Sides::kBlack && row == 0)))
-	//{
-	//	SetBoard(side.value(), type.value()  , core::utils::ClearBit(GetBoard(side.value(), type.value())  , to));
-	//	SetBoard(side.value(), Pieces::kQueen, core::utils::SetBit  (GetBoard(side.value(), Pieces::kQueen), to));
-	//}
-
-	//just_captured_piece_ = captured;
-
-	last_played_piece_to_ = to;
-	FinishTurn();
-}
-
-//
-//void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
-//{
-//	available_pawn_captures_  = utils::pawn::GetPawnCaptures(side, black_bb_, white_bb_, GetBoard(side, Pieces::kPawn));
-//	
-//	UpdateQueenCaptures(side);
-//}

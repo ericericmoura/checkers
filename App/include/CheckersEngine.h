@@ -10,11 +10,19 @@
 #include "BitboardManager.h"
 #include "MoveGenerator.h"
 
+enum class GameState
+{
+	kPlaying,
+	kFinished,
+	kBlackWon,
+	kWhiteWon
+};
+
 class CheckersEngine
 {
 public:
 	void Print() const noexcept;
-	std::expected<void, std::string> ExecuteCommand(std::string cmd) noexcept;
+	std::expected<GameState, std::string> ExecuteCommand(std::string cmd) noexcept;
 
 private:
 	BitboardManager bb_manager_{};
@@ -32,11 +40,12 @@ private:
 
 	Sides GetEnemySide() const noexcept;
 
-	void FinishTurn() noexcept;
+	std::expected<GameState, std::string> MovePiece(size_t from, size_t to) noexcept;
+
+	GameState FinishTurn() noexcept;
 	bool CheckForCombos() const noexcept;
 
 	bool CapturePiece(size_t from, size_t to) noexcept;
-	std::expected<void, std::string> MovePiece(size_t from, size_t to) noexcept;
 
 	void UpdatePossibleCaptures(Sides side) noexcept;
 };

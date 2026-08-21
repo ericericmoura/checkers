@@ -5,15 +5,16 @@
 #include <fmt/base.h>
 
 #include "Core/Utils/StringUtils.h"
-#include "CommandParser.h"
-
 #include "Utils/CheckersUtils.h"
+#include "Enums/Sides.h"
+#include "CommandParser.h"
 #include "MoveGenerator.h"
-#include <Enums/Sides.h>
+#include "BitboardManager.h"
 
 int main()
 {
 	MoveGenerator mv_gen{};
+	BitboardManager bb_manager{};
 
 	std::string input{};
 	while (true)
@@ -41,11 +42,12 @@ int main()
 			continue;
 		}	
 		if (auto value = std::get_if<CommandMove>(&parse_result.value()))
-		{
+		{			
 			fmt::println("\nFrom: {}, to: {}", value->move_from_, value->move_to_);
 		}
 		else if (auto value = std::get_if<CommandRedo>(&parse_result.value()))
 		{
+			bb_manager.Print();
 			fmt::println("\nRedoing last action!");
 		}
 		else if (auto value = std::get_if<CommandUndo>(&parse_result.value()))

@@ -2,9 +2,9 @@
 
 #include <optional>
 
-#include "CheckersTypes.h"
 #include "Enums/Directions.h"
 #include "Enums/Sides.h"
+#include "CheckersTypes.h"
 
 class MoveGenerator
 {

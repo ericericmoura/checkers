@@ -39,7 +39,7 @@ struct CommandDisplayCaptures
 
 using Command = std::variant<CommandMove, CommandRedo, CommandUndo, CommandDisplayMoves, CommandDisplayCaptures>;
 
-namespace CommandParser
+namespace command_parser
 {
 
 std::expected<Command, std::string> ParseCommand(std::string_view command) noexcept;

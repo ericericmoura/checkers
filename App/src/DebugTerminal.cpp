@@ -5,16 +5,14 @@
 #include <fmt/base.h>
 
 #include "Core/Utils/StringUtils.h"
+#include "Core/Debugging/Logging.h"
 #include "Utils/CheckersUtils.h"
 #include "Enums/Sides.h"
-#include "CommandParser.h"
-#include "MoveGenerator.h"
-#include "BitboardManager.h"
+#include "CheckersEngine.h"
 
 int main()
 {
-	MoveGenerator mv_gen{};
-	BitboardManager bb_manager{};
+	CheckersEngine engine{};
 
 	std::string input{};
 	while (true)
@@ -22,6 +20,8 @@ int main()
 #ifndef _DEBUG
 		std::cout << "\033[H\033[2J" << std::flush;
 #endif // !_DEBUG
+
+		engine.Print();
 
 		std::cout << "\nEnter command:\n";
 		std::cout << " - quit\n - redo\n - undo\n - display-moves xy\n - display-captures xy\n:";
@@ -35,37 +35,11 @@ int main()
 			return 0;
 		}
 		
-		auto parse_result = CommandParser::ParseCommand(input);
-		if (!parse_result)
+		auto result = engine.ExecuteCommand(input);
+		if (!result)
 		{
-			std::cout << "\n" << parse_result.error() << "\n";
+			core::debugging::LogError("{}\n", result.error());
 			continue;
-		}	
-		if (auto value = std::get_if<CommandMove>(&parse_result.value()))
-		{			
-			fmt::println("\nFrom: {}, to: {}", value->move_from_, value->move_to_);
-		}
-		else if (auto value = std::get_if<CommandRedo>(&parse_result.value()))
-		{
-			bb_manager.Print();
-			fmt::println("\nRedoing last action!");
-		}
-		else if (auto value = std::get_if<CommandUndo>(&parse_result.value()))
-		{
-			fmt::println("\nUndoing last action!");
-		}
-		else if (auto value = std::get_if<CommandDisplayMoves>(&parse_result.value()))
-		{			
-			fmt::println("\nDisplaying moves:");
-			utils::checkers::LogBitboardWithContrast(mv_gen.GetMovementsForPawn(value->piece_index_, Sides::kWhite), 'P');
 		}		
-		else if (auto value = std::get_if<CommandDisplayCaptures>(&parse_result.value()))
-		{
-			fmt::println("\nBlockers:");
-			utils::checkers::LogBitboardWithContrast(0xA0000A000A00, 'B');
-
-			fmt::println("\nDisplaying captures:");
-			utils::checkers::LogBitboardWithContrast(mv_gen.GetCapturesForQueen(value->piece_index_, 0xA0000A000A00, 0), 'M');
-		}
 	}
 }

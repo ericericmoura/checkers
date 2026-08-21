@@ -13,7 +13,7 @@
 #include "Enums/Sides.h"
 #include "CheckersTypes.h"
 
-BitboardManager::BitboardManager()
+BitboardManager::BitboardManager() noexcept
 {
 	SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA55);
 	SetBoard(Sides::kBlack, Pieces::kPawn, 0xAA55000000000000);
@@ -69,6 +69,10 @@ bool BitboardManager::RemovePiece(size_t i) noexcept
 
 std::expected<void, std::string> BitboardManager::MovePiece(size_t from, size_t to) noexcept
 {	
+	if (!IsIndexOccupied(from))
+	{
+		return std::unexpected("Invalid request : non-existent piece.");
+	}
 	if (IsIndexOccupied(to))
 	{
 		return std::unexpected("Invalid request: can't move piece into an occupied square.");
@@ -141,6 +145,15 @@ checkers_types::bitboard BitboardManager::GetBoard(Sides side, Pieces piece) con
 		return {};
 	}
 	return bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece));
+}
+
+checkers_types::bitboard BitboardManager::GetBoard(Sides side, Pieces piece) const noexcept
+{
+	if (side == Sides::kCount)
+	{
+		return {};
+	}
+	return side == Sides::kWhite ? white_bb_ : black_bb_;
 }
 
 void BitboardManager::SetBoard(Sides side, Pieces piece, checkers_types::bitboard board) noexcept

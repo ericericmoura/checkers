@@ -1,118 +1,50 @@
-//#include "CheckersEngine.h"
-//
-//#include <optional>
-//#include <string>
-//#include <utility>
-//#include <bit>
-//
-//#include <fmt/base.h>
-//#include <fmt/color.h>
-//
-//#include "Core/Utils/BitUtils.h"
-//#include "Core/Debugging/Logging.h"
-//#include "Constants/CheckersConstants.h"
-//#include "Enums/Sides.h"
-//#include "Enums/Pieces.h"
-//#include "Enums/Directions.h"
-//#include "Utils/CheckersUtils.h"
-//#include "Utils/DirectionUtils.h"
-//
-//void CheckersEngine::Init() noexcept
-//{
-//	CacheDiagonalRays();	
-//
-//	SetBoard(Sides::kWhite, Pieces::kQueen, 0x0010000000000000);
-//	SetBoard(Sides::kWhite, Pieces::kPawn,  0x0000000000442851);
-//	SetBoard(Sides::kBlack, Pieces::kPawn,  0x82000A0002000000);
-//
-//	FinishTurn();
-//}
-//
-//void CheckersEngine::Print() const noexcept
-//{
-//	const auto side_to_play = current_team_ == Sides::kWhite ? "White" : "Black";
-//	fmt::print("\n\n{} to play.", side_to_play);
-//
-//	fmt::print("\n");
-//	for (int rank = checkers_constants::row_count_ - 1; rank >= 0; --rank)
-//	{
-//		fmt::print("{}  ", rank + 1);
-//		for (int file = 0; file < checkers_constants::col_count_; ++file)
-//		{
-//			const auto index = file + rank * checkers_constants::col_count_;
-//			const auto side = GetSideByIndex(index);
-//			const auto type = GetPieceTypeByIndex(index);
-//			
-//			if (!side.has_value())
-//			{
-//				fmt::print("0 ");
-//				continue;
-//			}
-//			auto symbol = 'P';
-//			auto style  = side == Sides::kBlack 
-//				? fg(fmt::color::orange_red  ) | fmt::emphasis::bold
-//				: fg(fmt::color::light_yellow) | fmt::emphasis::bold;
-//
-//			if (type == Pieces::kQueen)
-//			{
-//				symbol = 'Q';
-//			}
-//
-//			fmt::print(style, "{} ", symbol);
-//		}
-//		fmt::print("\n");
-//	}
-//	fmt::print("\n   a b c d e f g h");
-//}
-//
-//void CheckersEngine::ExecuteCommand(std::string cmd) noexcept
-//{
-//	if (game_over_)
-//	{
-//		return;
-//	}	
-//	if (cmd.length() != 4)
-//	{
-//		core::debugging::LogError("Invalid checkers command.");
-//		return;
-//	}
-//	const auto commands = SplitCommand(cmd);
-//	
-//	const auto first_i  = GetIndexFromNotation(commands.first );
-//	const auto second_i = GetIndexFromNotation(commands.second);
-//
-//	if (last_played_piece_to_.has_value() && last_played_piece_to_.value() != first_i)
-//	{
-//		core::debugging::LogError("You are in a combo, you must move the previous piece.");
-//		return;
-//	}
-//
-//	if (!first_i.has_value() || !second_i.has_value())
-//	{
-//		core::debugging::LogError("Invalid checkers command.");
-//		return;
-//	}
-//
-//	const auto must_capture_with_pawn = GetPieceTypeByIndex(first_i.value()) == Pieces::kPawn && available_pawn_captures_ != 0;
-//
-//	const auto must_capture_with_queen = GetPieceTypeByIndex(first_i.value()) == Pieces::kQueen && available_queen_captures_ != 0;
-//
-//	if (   (must_capture_with_pawn  && !core::utils::IsBitSet(available_pawn_captures_, second_i .value())) 
-//		|| (must_capture_with_queen && !core::utils::IsBitSet(available_queen_captures_, second_i.value())))
-//	{
-//		core::debugging::LogError("You are required to capture a piece.");
-//		return;
-//	}
-//
-//	bool success_moving = MovePiece(first_i.value(), second_i.value());	
-//	if (!success_moving)
-//	{
-//		return;
-//	}	
-//	last_played_piece_to_  = second_i.value();
-//	FinishTurn();
-//}
-//
+#include "CheckersEngine.h"
+
+#include <optional>
+#include <string>
+#include <utility>
+#include <bit>
+#include <expected>
+#include <variant>
+
+#include <fmt/base.h>
+#include <fmt/color.h>
+
+#include "Core/Utils/BitUtils.h"
+#include "Core/Debugging/Logging.h"
+#include "Constants/CheckersConstants.h"
+#include "Enums/Sides.h"
+#include "Enums/Pieces.h"
+#include "Enums/Directions.h"
+#include "Utils/CheckersUtils.h"
+#include "Utils/DirectionUtils.h"
+#include "CommandParser.h"
+#include <CheckersTypes.h>
+
+void CheckersEngine::Print() const noexcept
+{
+	const auto side_to_play = current_team_ == Sides::kWhite ? "White" : "Black";
+	fmt::print("\nIt's {}'s turn:", side_to_play);
+	bb_manager_.Print();
+}
+
+std::expected<void, std::string> CheckersEngine::ExecuteCommand(std::string cmd) noexcept
+{
+	if (game_over_)
+	{
+		return std::unexpected("The game's over.");
+	}
+	return command_parser::ParseCommand(cmd).transform(
+		[this](const auto& command)
+		{
+			if (auto value = std::get_if<CommandMove>(&command))
+			{
+				MovePiece(value->move_from_, value->move_to_);
+			}
+		}
+	);
+}
+
 //void CheckersEngine::FinishTurn() noexcept
 //{
 //	if (black_bb_ == 0)
@@ -231,278 +163,82 @@
 //	}
 //	return enemy_i;
 //}
-//
-//bool CheckersEngine::MovePiece(size_t from, size_t to) noexcept
-//{	
-//	if (IsIndexOccupied(to))
-//	{
-//		core::debugging::LogError("Can't move piece into an occupied square.");
-//		return false;
-//	}
-//	const auto side = GetSideByIndex(from);
-//	const auto type = GetPieceTypeByIndex(from);
-//	if (!side.has_value() || !type.has_value() || side != current_team_)
-//	{
-//		core::debugging::LogError("Can't move piece. It's either a non-existent or enemy piece.");
-//		return false;
-//	}
-//	const auto movements = GetPossibleMovements(side.value(), type.value(), from);
-//	const auto available_captures = type == Pieces::kPawn ? available_pawn_captures_ : available_queen_captures_;
-//	if (!core::utils::IsBitSet(movements | available_captures, to))
-//	{
-//		core::debugging::LogError("Invalid movement.");
-//		return false;
-//	}
-//	auto captured = false;
-//	if (available_captures != 0)
-//	{
-//		captured = CapturePiece(from, to);
-//		just_captured_piece_ = captured;
-//	}
-//	if (available_captures != 0 && !captured)
-//	{
-//		core::debugging::LogError("Invalid capture.");
-//		return false;
-//	}	
-//	auto board = GetBoard(side.value(), type.value());
-//	board = core::utils::ClearBit(board, from);
-//	board = core::utils::SetBit  (board, to  );
-//	SetBoard(side.value(), type.value(), board);
-//
-//	const auto row = to / checkers_constants::col_count_;
-//
-//	if (type == Pieces::kPawn && ((side == Sides::kWhite && row == checkers_constants::row_count_ - 1) || (side == Sides::kBlack && row == 0)))
-//	{
-//		SetBoard(side.value(), type.value()  , core::utils::ClearBit(GetBoard(side.value(), type.value())  , to));
-//		SetBoard(side.value(), Pieces::kQueen, core::utils::SetBit  (GetBoard(side.value(), Pieces::kQueen), to));
-//	}
-//
-//	just_captured_piece_ = captured;
-//
-//	return true;
-//}
-//
-//std::optional<Sides> CheckersEngine::GetSideByIndex(size_t i) const noexcept
-//{
-//	if (core::utils::IsBitSet(white_bb_, i))
-//	{
-//		return Sides::kWhite;
-//	}
-//	if (core::utils::IsBitSet(black_bb_, i))
-//	{
-//		return Sides::kBlack;
-//	}
-//	return {};
-//}
-//
-//std::optional<Pieces> CheckersEngine::GetPieceTypeByIndex(size_t i) const noexcept
-//{
-//	const auto side = GetSideByIndex(i);
-//	if (!side.has_value())
-//	{
-//		return {};
-//	}
-//	const auto pawn_board  = bitboards_.at(static_cast<size_t>(side.value())).at(static_cast<size_t>(Pieces::kPawn ));
-//	if (core::utils::IsBitSet(pawn_board, i))
-//	{
-//		return Pieces::kPawn;
-//	}
-//	const auto queen_board = bitboards_.at(static_cast<size_t>(side.value())).at(static_cast<size_t>(Pieces::kQueen));
-//	if (core::utils::IsBitSet(queen_board, i))
-//	{
-//		return Pieces::kQueen;
-//	}
-//	return {};
-//}
-//
-//bool CheckersEngine::IsIndexOccupied(size_t i) const noexcept
-//{
-//	return core::utils::IsBitSet(white_bb_, i) || core::utils::IsBitSet(black_bb_, i);
-//}
-//
-//void CheckersEngine::SetBoard(Sides side, Pieces piece, bitboard board) noexcept
-//{
-//	const auto old_bb = GetBoard(side, piece);
-//	auto& side_board = side == Sides::kWhite ? white_bb_ : black_bb_;
-//
-//	side_board ^= old_bb;
-//	bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece)) = board;
-//	side_board |= board;
-//}
-//
-//bitboard CheckersEngine::GetBoard(Sides side, Pieces piece) const noexcept
-//{
-//	return bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece));
-//}
-//
-//std::pair<std::string, std::string> CheckersEngine::SplitCommand(std::string cmd) const noexcept
-//{
-//	std::pair<std::string, std::string> result{};
-//	result.first  = cmd.substr(0, 2);
-//	result.second = cmd.substr(2, 2);
-//	return result;
-//}
-//
-//std::optional<size_t> CheckersEngine::GetIndexFromNotation(std::string notation) const noexcept
-//{
-//	if (notation.at(1) < '0' || notation.at(1) > '9' ||
-//		notation.at(0) < 'a' || notation.at(0) > 'h')
-//	{		
-//		return {};
-//	}
-//
-//	const auto rank = static_cast<std::size_t>(notation.at(1) - '0' - 1);
-//	const auto file = static_cast<std::size_t>(notation.at(0) - 'a');
-//
-//	bool out_of_bounds = rank > checkers_constants::row_count_ || file > checkers_constants::col_count_ || rank < 0 || file < 0;
-//	if (out_of_bounds)
-//	{
-//		return {};
-//	}
-//
-//	size_t result = file;
-//	result += rank * checkers_constants::col_count_;
-//	return result;
-//}
-//
-//bitboard CheckersEngine::GetPossibleMovements(Sides side, Pieces type, size_t i) const noexcept
-//{
-//	bitboard result = 0;
-//	if (type == Pieces::kPawn)
-//	{		
-//		return utils::pawn::GetPossibleMovesForPawn(side, i);
-//	}
-//	if (type == Pieces::kQueen)
-//	{
-//		return GetPossibleMovementsForQueen(side, i);
-//	}
-//	core::debugging::LogError("Invalid piece type.");
-//	return result;
-//}
-//
-//bitboard CheckersEngine::GetPossibleMovementsForQueen(Sides side, size_t i) const noexcept
-//{
-//	auto blockers = black_bb_ | white_bb_;
-//	
-//	bitboard attacks = 0;
-//	attacks |= GetMaskedRayAttacks(DiagonalDirections::kNorthWest, i, blockers);
-//	attacks |= GetMaskedRayAttacks(DiagonalDirections::kNorthEast, i, blockers);
-//	attacks |= GetMaskedRayAttacks(DiagonalDirections::kSouthWest, i, blockers);
-//	attacks |= GetMaskedRayAttacks(DiagonalDirections::kSouthEast, i, blockers);
-//
-//	return attacks;
-//}
-//
-//bitboard CheckersEngine::GetMaskedRayAttacks(DiagonalDirections dir, size_t i, bitboard blockers) const noexcept
-//{
-//	// Cast a ray from the user into the specific direction
-//	const auto rays = diagonal_rays_[static_cast<int>(dir)][i];
-//	if (blockers == 0)
-//	{
-//		return rays;
-//	}
-//
-//	// Mask out any enemies that are hit
-//	const auto mask = rays & blockers;
-//	if (mask == 0)
-//	{
-//		return rays;
-//	}
-//	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
-//
-//	auto first_blocker_index = vertical_dir == VerticalDirections::kDown
-//		? checkers_constants::total_squares_ - 1 - std::countl_zero(mask)
-//		: std::countr_zero(mask);
-//
-//	// Add the rays
-//	auto movements = rays;
-//	// Remove the rays past the first blocker
-//	movements &= ~diagonal_rays_[static_cast<int>(dir)][first_blocker_index];
-//	movements &= ~blockers;
-//	return movements;
-//}
-//
-//bitboard CheckersEngine::GetMaskedRayCaptures(DiagonalDirections dir, size_t i, bitboard blockers, bitboard allies) const noexcept
-//{
-//	bitboard captures = 0;
-//
-//	// Cast a ray from the user into the specific direction
-//	const auto rays = diagonal_rays_[static_cast<int>(dir)][i];
-//
-//	// Mask out any enemies that are hit
-//	const auto mask = rays & blockers;
-//	if (mask == 0)
-//	{
-//		return 0;
-//	}
-//	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
-//
-//	const auto first_blocker_index = vertical_dir == VerticalDirections::kDown
-//		? checkers_constants::total_squares_ - 1 - std::countl_zero(mask)
-//		: std::countr_zero(mask);
-//	// If there's only one blocker, return
-//	if (std::popcount(mask) == 1)
-//	{
-//		return diagonal_rays_[static_cast<int>(dir)][first_blocker_index] & ~blockers;
-//	}
-//	
-//	auto mask_copy = mask;
-//	// Remove the first blocker
-//	mask_copy = core::utils::ClearBit(mask_copy, first_blocker_index);	
-//	// Get the second blocker
-//	const auto second_blocker_index = vertical_dir == VerticalDirections::kDown
-//		? checkers_constants::total_squares_ - 1 - std::countl_zero(mask_copy)
-//		: std::countr_zero(mask_copy);
-//
-//	// Add the rays from the first blocker
-//	captures |=  diagonal_rays_[static_cast<int>(dir)][first_blocker_index];
-//	// Remove the rays past the second blocker
-//	captures &= ~diagonal_rays_[static_cast<int>(dir)][second_blocker_index];
-//	captures &= ~blockers;
-//
-//	return captures;
-//}
+
+Sides CheckersEngine::GetEnemySide() const noexcept
+{
+	return current_team_ == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
+}
+
+std::expected<void, std::string> CheckersEngine::MovePiece(size_t from, size_t to) noexcept
+{	
+	if (last_played_piece_to_.has_value() && last_played_piece_to_.value() != from)
+	{
+		return std::unexpected("Invalid move: you are in a combo, you must move the previous piece.");
+	}
+
+	const auto piece_type = bb_manager_.GetPieceTypeByIndex(from);
+	const auto piece_side = bb_manager_.GetSideByIndex(from);
+
+	if (!piece_side.has_value() || !piece_type.has_value())
+	{
+		return std::unexpected("Invalid piece: it's either non-existent or invalid.");
+	}
+
+	const auto captures = piece_type == Pieces::kPawn 
+		? available_pawn_captures_ 
+		: available_queen_captures_;
+	
+	const auto should_capture = captures != 0;	
+	if (should_capture && !core::utils::bits::IsBitSet(captures, to))
+	{
+		return std::unexpected("Invalid move: you are required to capture a piece.");
+	}		
+
+	if (piece_side != current_team_)
+	{
+		return std::unexpected("Invalid move: can't move an enemy piece.");
+	}
+
+	const auto movements = piece_type == Pieces::kPawn 
+		? move_generator_.GetMovementsForPawn (from, current_team_)
+		: move_generator_.GetMovementsForQueen(from, bb_manager_.GetBoard(GetEnemySide()), bb_manager_.GetBoard(current_team_));
+	
+	if (!core::utils::bits::IsBitSet(movements, to))
+	{
+		return std::unexpected("Invalid move: unreachable or blocked square.");
+	}
+
+	if (should_capture)
+	{
+		just_captured_piece_ = CapturePiece(from, to);
+	}
+	if (should_capture && !just_captured_piece_)
+	{
+		return std::unexpected("Invalid capture.");
+	}	
+	//auto board = GetBoard(side.value(), type.value());
+	//board = core::utils::ClearBit(board, from);
+	//board = core::utils::SetBit  (board, to  );
+	//SetBoard(side.value(), type.value(), board);
+
+	//const auto row = to / checkers_constants::col_count_;
+
+	//if (type == Pieces::kPawn && ((side == Sides::kWhite && row == checkers_constants::row_count_ - 1) || (side == Sides::kBlack && row == 0)))
+	//{
+	//	SetBoard(side.value(), type.value()  , core::utils::ClearBit(GetBoard(side.value(), type.value())  , to));
+	//	SetBoard(side.value(), Pieces::kQueen, core::utils::SetBit  (GetBoard(side.value(), Pieces::kQueen), to));
+	//}
+
+	//just_captured_piece_ = captured;
+
+	last_played_piece_to_ = to;
+	FinishTurn();
+}
+
 //
 //void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
 //{
 //	available_pawn_captures_  = utils::pawn::GetPawnCaptures(side, black_bb_, white_bb_, GetBoard(side, Pieces::kPawn));
 //	
 //	UpdateQueenCaptures(side);
-//}
-//
-//void CheckersEngine::UpdateQueenCaptures(Sides side) noexcept
-//{
-//	const auto blockers = side == Sides::kWhite ? black_bb_ : white_bb_;
-//	const auto allies   = side == Sides::kWhite ? white_bb_ : black_bb_;
-//
-//	available_queen_captures_ = 0;
-//
-//	auto queen_bb = GetBoard(side, Pieces::kQueen);
-//	while (queen_bb > 0)
-//	{
-//		const auto i = std::countr_zero(queen_bb);
-//		queen_bb = core::utils::ClearBit(queen_bb, i);
-//
-//		bitboard result = 0;
-//		result |= GetMaskedRayCaptures(DiagonalDirections::kNorthEast, i, blockers, allies);
-//		result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, blockers, allies);
-//		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthEast, i, blockers, allies);
-//		result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, blockers, allies);
-//
-//		available_queen_captures_ |= result;
-//	}	
-//}
-//
-//bitboard CheckersEngine::GetCapturesForQueen(Sides side, size_t i) const noexcept
-//{
-//	const auto blockers = side == Sides::kWhite ? black_bb_ : white_bb_;
-//	const auto allies   = side == Sides::kWhite ? white_bb_ : black_bb_;
-//
-//	bitboard result = 0;
-//	result |= GetMaskedRayCaptures(DiagonalDirections::kNorthEast, i, blockers, allies);
-//	result |= GetMaskedRayCaptures(DiagonalDirections::kNorthWest, i, blockers, allies);
-//	result |= GetMaskedRayCaptures(DiagonalDirections::kSouthEast, i, blockers, allies);
-//	result |= GetMaskedRayCaptures(DiagonalDirections::kSouthWest, i, blockers, allies);
-//
-//	return result;
 //}

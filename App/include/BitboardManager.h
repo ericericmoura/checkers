@@ -11,7 +11,7 @@
 class BitboardManager
 {
 public:
-	BitboardManager();
+	BitboardManager() noexcept;
 
 	void Print() const noexcept;
 
@@ -24,6 +24,7 @@ public:
 	bool IsIndexOccupied(size_t i) const noexcept;
 
 	checkers_types::bitboard GetBoard(Sides side, Pieces piece) const noexcept;
+	checkers_types::bitboard GetBoard(Sides side) const noexcept;
 
 private:
 	checkers_types::bitboard_list bitboards_{};

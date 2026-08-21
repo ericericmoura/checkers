@@ -96,7 +96,7 @@ std::expected<Command, std::string> ParseCommandWithArguments(std::string_view c
 
 } // anonymous namespace
 
-std::expected<Command, std::string> CommandParser::ParseCommand(std::string_view cmd) noexcept
+std::expected<Command, std::string> command_parser::ParseCommand(std::string_view cmd) noexcept
 {
 	if (cmd.length() > 4)
 	{

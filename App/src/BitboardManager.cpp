@@ -15,8 +15,11 @@
 
 BitboardManager::BitboardManager() noexcept
 {
-	SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA55);
-	SetBoard(Sides::kBlack, Pieces::kPawn, 0xAA55000000000000);
+	//SetBoard(Sides::kWhite, Pieces::kPawn, 0xAA55);
+	//SetBoard(Sides::kBlack, Pieces::kPawn, 0xAA55000000000000);
+
+	SetBoard(Sides::kWhite, Pieces::kPawn, 0x240A845ULL);
+	SetBoard(Sides::kBlack, Pieces::kPawn, 0xAA01A00100000000ULL);
 }
 
 void BitboardManager::Print() const noexcept

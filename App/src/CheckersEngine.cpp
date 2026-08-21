@@ -14,10 +14,15 @@
 #include "Enums/Directions.h"
 #include "CheckersTypes.h"
 
+CheckersEngine::CheckersEngine()
+{
+	UpdatePossibleCaptures(current_team_);
+}
+
 void CheckersEngine::Print() const noexcept
 {
 	const auto side_to_play = current_team_ == Sides::kWhite ? "White" : "Black";
-	fmt::print("\nIt's {}'s turn:", side_to_play);
+	fmt::print("\n\nIt's {}'s turn:", side_to_play);
 	bb_manager_.Print();
 }
 
@@ -55,14 +60,14 @@ std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, siz
 		? move_generator_.GetMovementsForPawn (from, current_team_)
 		: move_generator_.GetMovementsForQueen(from, bb_manager_.GetBoard(GetEnemySide()), bb_manager_.GetBoard(current_team_));
 	
-	if (!core::utils::bits::IsBitSet(movements, to))
-	{
-		return std::unexpected("Invalid move: unreachable or blocked square.");
-	}
-
 	const auto captures = piece_type == Pieces::kPawn
 		? available_pawn_captures_
 		: available_queen_captures_;
+
+	if (!core::utils::bits::IsBitSet(movements | captures, to))
+	{
+		return std::unexpected("Invalid move: unreachable or blocked square.");
+	}
 
 	const auto should_capture = captures != 0;
 	if (should_capture && !core::utils::bits::IsBitSet(captures, to))
@@ -149,9 +154,6 @@ GameState CheckersEngine::FinishTurn() noexcept
 		game_over_ = true;
 		return GameState::kWhiteWon;
 	}
-
-	available_pawn_captures_  = 0;
-	available_queen_captures_ = 0;
 
 	const auto is_combo = CheckForCombos();
 	if (!is_combo)

@@ -20,6 +20,8 @@ enum class GameState
 class CheckersEngine
 {
 public:
+	CheckersEngine();
+
 	void Print() const noexcept;
 
 	std::expected<GameState, std::string> MovePiece(size_t from, size_t to) noexcept;

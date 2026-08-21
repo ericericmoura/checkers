@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <bit>
+#include <cmath>
 
 #include "Core/Utils/BitUtils.h"
 #include "Enums/Directions.h"
@@ -67,7 +68,7 @@ checkers_types::bitboard MoveGenerator::GetCapturesForPawns(Sides side, checkers
 	const auto landed_east = MovePawnForward(side, jumped_east, side == Sides::kBlack ? 7 : 9) & empty_squares;
 	const auto landed_west = MovePawnForward(side, jumped_west, side == Sides::kBlack ? 9 : 7) & empty_squares;
 
-	return landed_east & landed_west;
+	return landed_east | landed_west;
 }
 
 checkers_types::bitboard MoveGenerator::GetCapturesForPawn(Sides side, checkers_types::bitboard allies, checkers_types::bitboard enemies, size_t i) noexcept

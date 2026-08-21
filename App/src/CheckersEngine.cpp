@@ -21,25 +21,14 @@ void CheckersEngine::Print() const noexcept
 	bb_manager_.Print();
 }
 
-std::expected<GameState, std::string> CheckersEngine::ExecuteCommand(std::string cmd) noexcept
-{
-	return command_parser::ParseCommand(cmd).and_then(
-		[this](const auto& command) -> std::expected<GameState, std::string>
-		{
-			if (auto value = std::get_if<CommandMove>(&command))
-			{
-				if (game_over_) return std::unexpected("Invalid move: the game's already over.");
-
-				return MovePiece(value->move_from_, value->move_to_);
-			}
-			return game_over_ ? GameState::kFinished : GameState::kPlaying;
-		}
-	);
-}
-
 Sides CheckersEngine::GetEnemySide() const noexcept
 {
-	return current_team_ == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
+	return GetEnemySide(current_team_);
+}
+
+Sides CheckersEngine::GetEnemySide(Sides side) noexcept
+{
+	return side == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
 }
 
 std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, size_t to) noexcept
@@ -97,6 +86,27 @@ std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, siz
 	last_played_piece_to_ = to;
 	
 	return FinishTurn();
+}
+
+std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetMoves(size_t at) const noexcept
+{
+	if (!bb_manager_.IsIndexOccupied(at))
+	{
+		return std::unexpected("Invalid index: there's no piece at the specified square.");
+	}
+
+	const auto side = bb_manager_.GetSideByIndex(at);
+	if (!side.has_value())
+	{
+		return std::unexpected("Invalid index: there's no piece at the specified square.");
+	}
+	const auto enemy_side = GetEnemySide(side.value());
+
+	const auto moves = bb_manager_.GetPieceTypeByIndex(at) == Pieces::kPawn
+		? move_generator_.GetMovementsForPawn (at, side.value())
+		: move_generator_.GetMovementsForQueen(at, bb_manager_.GetBoard(enemy_side), bb_manager_.GetBoard(side.value()));
+
+	return moves;
 }
 
 GameState CheckersEngine::FinishTurn() noexcept

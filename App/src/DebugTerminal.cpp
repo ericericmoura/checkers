@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <expected>
 #include <variant>
 
 #include <fmt/base.h>
@@ -7,8 +8,8 @@
 #include "Core/Utils/StringUtils.h"
 #include "Core/Debugging/Logging.h"
 #include "Utils/CheckersUtils.h"
-#include "Enums/Sides.h"
 #include "CheckersEngine.h"
+#include "CommandParser.h"
 
 int main()
 {
@@ -24,22 +25,39 @@ int main()
 		engine.Print();
 
 		std::cout << "\nEnter command:\n";
-		std::cout << " - quit\n - redo\n - undo\n - display-moves xy\n - display-captures xy\n:";
+		std::cout << " - quit\n - redo\n - undo\n - display-moves xy\n - display-captures xy\n - move xyza\n:";
 		if (!std::getline(std::cin, input))
 		{
 			return 0;
 		}
-
 		if (utils::string::iequals(input, "quit"))
 		{
 			return 0;
 		}
-		
-		auto result = engine.ExecuteCommand(input);
-		if (!result)
-		{
-			core::debugging::LogError("{}\n", result.error());
-			continue;
-		}		
+
+		command_parser::ParseCommand(input).transform(
+			[&engine](const auto& command)
+			{
+				if (auto value = std::get_if<CommandMove>(&command))
+				{
+					const auto result = engine.MovePiece(value->move_from_, value->move_to_);
+					if (!result)
+					{
+						core::debugging::LogError("{}\n", result.error());
+					}
+					return;
+				}
+				if (auto value = std::get_if<CommandDisplayMoves>(&command))
+				{
+					const auto piece_moves = engine.GetMoves(value->piece_index_);
+					if (!piece_moves)
+					{
+						core::debugging::LogError("{}\n", piece_moves.error());
+					}
+					fmt::print("\nMoves for piece at index {}:", value->piece_index_);
+					utils::checkers::LogBitboardWithContrast(piece_moves.value(), 'M');
+					return;
+				}
+			});
 	}
 }

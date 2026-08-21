@@ -67,6 +67,18 @@ std::expected<std::string_view, std::string> GetArgsFromCommand(std::string_view
 
 std::expected<Command, std::string> ParseCommandWithArguments(std::string_view cmd)
 {
+	if (cmd.starts_with(CommandMove::kKey))
+	{
+		return GetArgsFromCommand(cmd, CommandMove::kKey).and_then(
+			[](const auto& args)
+			{
+				return GetCoordinatesFromNotation(args).and_then(
+					[](std::pair<size_t, size_t> indexes)
+					{
+						return std::expected<Command, std::string>(std::in_place, CommandMove{ indexes.first, indexes.second });
+					});
+			});
+	}
 	if (cmd.starts_with(CommandDisplayMoves::kKey))
 	{
 		return GetArgsFromCommand(cmd, CommandDisplayMoves::kKey).and_then(
@@ -114,9 +126,5 @@ std::expected<Command, std::string> command_parser::ParseCommand(std::string_vie
 	{
 		return CommandUndo();
 	}
-	return GetCoordinatesFromNotation(cmd)
-		.transform([](const std::pair<size_t, size_t>& coords) 
-			{ 
-				return CommandMove(coords.first, coords.second);
-			});
+	return std::unexpected("Non-existent command.");
 }

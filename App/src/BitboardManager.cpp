@@ -147,7 +147,7 @@ checkers_types::bitboard BitboardManager::GetBoard(Sides side, Pieces piece) con
 	return bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece));
 }
 
-checkers_types::bitboard BitboardManager::GetBoard(Sides side, Pieces piece) const noexcept
+checkers_types::bitboard BitboardManager::GetBoard(Sides side) const noexcept
 {
 	if (side == Sides::kCount)
 	{

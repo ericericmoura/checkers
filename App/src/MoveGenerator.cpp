@@ -75,6 +75,66 @@ checkers_types::bitboard MoveGenerator::GetCapturesForPawn(Sides side, checkers_
 	return GetCapturesForPawns(side, allies, enemies, 0x1ull << i);
 }
 
+std::optional<size_t> MoveGenerator::GetEnemyIndexCapturedByPawn(size_t from, size_t to, VerticalDirections dir_y) noexcept
+{
+	const auto from_col = from % 8;
+	const auto from_row = from / 8;
+	const auto to_col = to % 8;
+	const auto to_row = to / 8;
+
+	const auto distance_y = std::abs(static_cast<int>(from_col) - static_cast<int>(to_col));
+	const auto distance_x = std::abs(static_cast<int>(from_row) - static_cast<int>(to_row));
+
+	if (distance_y != 2 || distance_x != 2)
+	{
+		return {};
+	}
+
+	const auto is_east = from_col > to_col;
+	const auto is_west = from_col < to_col;
+
+	std::optional<size_t> enemy_i{};
+	if (dir_y == VerticalDirections::kUp && is_west)
+	{
+		enemy_i = from + 9;
+	}
+	if (dir_y == VerticalDirections::kUp && is_east)
+	{
+		enemy_i = from + 7;
+	}
+	if (dir_y == VerticalDirections::kDown && is_west)
+	{
+		enemy_i = from - 7;
+	}
+	if (dir_y == VerticalDirections::kDown && is_east)
+	{
+		enemy_i = from - 9;
+	}
+	return enemy_i;
+}
+
+std::optional<size_t> MoveGenerator::GetEnemyIndexCapturedByQueen(size_t from, size_t to, VerticalDirections dir_y, checkers_types::bitboard enemies) const noexcept
+{
+	const auto is_east = from % 8 < to % 8;
+
+	const auto dir = utils::directions::GetDiagonalDirection(is_east, dir_y == VerticalDirections::kUp);
+	const auto blockers = diagonal_rays_[static_cast<int>(dir)][from] & enemies;
+	if (std::popcount(blockers) == 0)
+	{
+		return {};
+	}
+	size_t enemy_i = {};
+	if (dir_y == VerticalDirections::kUp)
+	{
+		enemy_i = std::countr_zero(blockers);
+	}
+	else
+	{
+		enemy_i = static_cast<size_t>(checkers_constants::total_squares_) - 1 - std::countl_zero(blockers);
+	}
+	return enemy_i;
+}
+
 checkers_types::bitboard MoveGenerator::GetMaskedRayMovements(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept
 {
 	const auto mask = CastRay(dir, i, blockers);

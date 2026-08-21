@@ -2,16 +2,12 @@
 
 #include <string>
 #include <iostream>
-#include <cmath>
-#include <optional>
 
 #include <fmt/base.h>
 #include <fmt/color.h>
 
 #include "Core/Utils/BitUtils.h"
 #include "Constants/CheckersConstants.h"
-#include "Enums/Sides.h"
-#include "Enums/Directions.h"
 #include "CheckersTypes.h"
 
 bool utils::checkers::IsIndexOutOfBounds(size_t index) noexcept

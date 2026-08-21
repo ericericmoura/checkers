@@ -7,6 +7,9 @@
 
 struct CommandMove 
 {
+	static constexpr std::string_view kKey = "move";
+	static constexpr size_t kKeySize = kKey.length();
+
 	size_t move_from_ = {};
 	size_t move_to_   = {};
 };

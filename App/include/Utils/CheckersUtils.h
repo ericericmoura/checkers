@@ -1,9 +1,7 @@
 #pragma once
 
 #include <string>
-#include <optional>
 
-#include "Enums/Directions.h"
 #include "CheckersTypes.h"
 
 namespace utils

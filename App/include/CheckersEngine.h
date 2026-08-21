@@ -21,7 +21,13 @@ class CheckersEngine
 {
 public:
 	void Print() const noexcept;
-	std::expected<GameState, std::string> ExecuteCommand(std::string cmd) noexcept;
+
+	std::expected<GameState, std::string> MovePiece(size_t from, size_t to) noexcept;
+
+	std::expected<checkers_types::bitboard, std::string> GetMoves(size_t at) const noexcept;
+
+	Sides GetEnemySide() const noexcept;
+	static Sides GetEnemySide(Sides side) noexcept;
 
 private:
 	BitboardManager bb_manager_{};
@@ -36,10 +42,6 @@ private:
 	checkers_types::bitboard available_queen_captures_ = 0;
 
 	std::optional<size_t> last_played_piece_to_ = {};
-
-	Sides GetEnemySide() const noexcept;
-
-	std::expected<GameState, std::string> MovePiece(size_t from, size_t to) noexcept;
 
 	GameState FinishTurn() noexcept;
 	bool CheckForCombos() const noexcept;

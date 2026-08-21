@@ -18,6 +18,9 @@ public:
 	static checkers_types::bitboard GetCapturesForPawns(Sides side, checkers_types::bitboard allies, checkers_types::bitboard enemies, checkers_types::bitboard pawns) noexcept;
 	static checkers_types::bitboard GetCapturesForPawn (Sides side, checkers_types::bitboard allies, checkers_types::bitboard enemies, size_t i) noexcept;
 
+	static std::optional<size_t> GetEnemyIndexCapturedByPawn(size_t from, size_t to, VerticalDirections dir_y) noexcept;
+	std::optional<size_t> GetEnemyIndexCapturedByQueen(size_t from, size_t to, VerticalDirections dir_y, checkers_types::bitboard enemies) const noexcept;
+
 private:
 	checkers_types::ray_list diagonal_rays_{};
 
@@ -31,6 +34,7 @@ private:
 	std::optional<checkers_types::bitboard> CastRay(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept;
 	checkers_types::bitboard GetRay(DiagonalDirections dir, size_t i) const noexcept;
 	
-	void CacheDiagonalRays() noexcept;	
+	void CacheDiagonalRays() noexcept;		
+
 	static checkers_types::bitboard GenerateDiagonalRays(DiagonalDirections  dir, size_t index) noexcept;
 };

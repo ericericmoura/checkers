@@ -2,24 +2,17 @@
 
 #include <optional>
 #include <string>
-#include <utility>
-#include <bit>
 #include <expected>
 #include <variant>
 
 #include <fmt/base.h>
-#include <fmt/color.h>
 
 #include "Core/Utils/BitUtils.h"
-#include "Core/Debugging/Logging.h"
-#include "Constants/CheckersConstants.h"
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
-#include "Utils/CheckersUtils.h"
-#include "Utils/DirectionUtils.h"
 #include "CommandParser.h"
-#include <CheckersTypes.h>
+#include "CheckersTypes.h"
 
 void CheckersEngine::Print() const noexcept
 {
@@ -90,9 +83,13 @@ std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, siz
 
 	if (should_capture)
 	{
-		just_captured_piece_ = CapturePiece(from, to);
-
-		if (!just_captured_piece_) return std::unexpected("Invalid capture.");
+		const auto capture_result = CapturePiece(from, to);
+		if (!capture_result)
+		{
+			just_captured_piece_ = false;
+			return std::unexpected(capture_result.error());
+		}
+		just_captured_piece_ = true;
 	}
 
 	bb_manager_.MovePiece(from, to);
@@ -149,74 +146,35 @@ bool CheckersEngine::CheckForCombos() const noexcept
 	return captures != 0;
 }
 
-//bool CheckersEngine::CapturePiece(size_t from, size_t to) noexcept
-//{
-//	const auto side = GetSideByIndex     (from);
-//	const auto type = GetPieceTypeByIndex(from);
-//
-//	const auto available_captures = type == Pieces::kPawn ? available_pawn_captures_ : available_queen_captures_;
-//
-//	if (!core::utils::IsBitSet(available_captures, to))
-//	{
-//		return false;
-//	}
-//
-//	const auto dir_y = static_cast<int>(from) - static_cast<int>(to) > 0 ? VerticalDirections::kDown : VerticalDirections::kUp;	
-//
-//	std::optional<size_t> enemy_i{};
-//	if (type == Pieces::kPawn)
-//	{
-//		enemy_i = utils::pawn::CapturePieceWithPawn(from, to, dir_y);
-//	}
-//	if (type == Pieces::kQueen)
-//	{
-//		enemy_i = CapturePieceWithQueen(from, to, dir_y);
-//	}
-//
-//	if (!enemy_i.has_value())
-//	{
-//		return false;
-//	}
-//	const auto enemy_side = side.value() == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
-//	const auto enemy_type = GetPieceTypeByIndex(enemy_i.value());
-//
-//	if (!enemy_type.has_value())
-//	{
-//		return false;
-//	}
-//
-//	auto board = GetBoard(enemy_side, enemy_type.value());
-//	board = core::utils::ClearBit(board, enemy_i.value());
-//
-//	SetBoard(enemy_side, enemy_type.value(), board);
-//	return true;
-//}
-//
-//std::optional<size_t> CheckersEngine::CapturePieceWithQueen(size_t from, size_t to, VerticalDirections dir_y) const noexcept
-//{
-//	const auto is_east = from%8 < to%8;
-//
-//	const auto dir = utils::directions::GetDiagonalDirection(is_east, dir_y == VerticalDirections::kUp);
-//
-//	const auto opposite_side_bb = current_team_ == Sides::kBlack ? white_bb_ : black_bb_;
-//	const auto blockers         = diagonal_rays_[static_cast<int>(dir)][from] & opposite_side_bb;
-//
-//	if (std::popcount(blockers) == 0)
-//	{
-//		return {};
-//	}
-//
-//	size_t enemy_i = {};
-//	if (dir_y == VerticalDirections::kUp)
-//	{
-//		enemy_i = std::countr_zero(blockers);
-//	}
-//	else
-//	{
-//		enemy_i = static_cast<size_t>(checkers_constants::total_squares_) - 1 - std::countl_zero(blockers);
-//	}
-//	return enemy_i;
-//}
+std::expected<void, std::string> CheckersEngine::CapturePiece(size_t from, size_t to) noexcept
+{
+	const auto piece_side = bb_manager_.GetSideByIndex     (from);
+	const auto piece_type = bb_manager_.GetPieceTypeByIndex(from);
+
+	const auto captures = piece_type == Pieces::kPawn ? available_pawn_captures_ : available_queen_captures_;
+
+	if (!core::utils::bits::IsBitSet(captures, to))
+	{
+		return std::unexpected("Invalid capture: there's no available capture at that square.");
+	}
+
+	const auto dir_y = static_cast<int>(from) - static_cast<int>(to) > 0 ? VerticalDirections::kDown : VerticalDirections::kUp;
+	std::optional<size_t> enemy_i{};
+	if (piece_type == Pieces::kPawn)
+	{
+		enemy_i = move_generator_.GetEnemyIndexCapturedByPawn(from, to, dir_y);
+	}
+	if (piece_type == Pieces::kQueen)
+	{
+		enemy_i = move_generator_.GetEnemyIndexCapturedByQueen(from, to, dir_y, bb_manager_.GetBoard(GetEnemySide()));
+	}
+
+	if (!enemy_i.has_value())
+	{
+		return std::unexpected("Invalid capture: there's no enemy to capture.");
+	}
+	bb_manager_.RemovePiece(enemy_i.value());
+}
 
 void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
 {

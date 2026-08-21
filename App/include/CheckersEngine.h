@@ -4,9 +4,8 @@
 #include <optional>
 #include <expected>
 
-#include "CheckersTypes.h"
 #include "Enums/Sides.h"
-
+#include "CheckersTypes.h"
 #include "BitboardManager.h"
 #include "MoveGenerator.h"
 
@@ -45,7 +44,7 @@ private:
 	GameState FinishTurn() noexcept;
 	bool CheckForCombos() const noexcept;
 
-	bool CapturePiece(size_t from, size_t to) noexcept;
+	std::expected<void, std::string> CapturePiece(size_t from, size_t to) noexcept;
 
 	void UpdatePossibleCaptures(Sides side) noexcept;
 };

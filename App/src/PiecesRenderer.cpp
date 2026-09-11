@@ -30,19 +30,22 @@ void PiecesRenderer::Update(
 
 	while (all_pawns != 0)
 	{
-		utils::checkers::LogBitboardWithContrast(all_pawns, 'B');
+		utils::checkers::LogBitboardWithContrast(all_pawns, 'A');
 
+		// BIT BOARD INDEX 1 = A1 OR BOTTOM LEFT
+		// GRAPHICAL CHESS BOARD INDEX 1 = TOP LEFT
 		const auto index = std::countr_zero(all_pawns);
-		all_pawns &= ~(1ull >> index);
+		all_pawns &= ~(0x1ull << index);
 
+		utils::checkers::LogBitboardWithContrast(0x1ull << index, 'R');
 		utils::checkers::LogBitboardWithContrast(all_pawns, 'A');
 
 		const auto top    = (index / board_size.x) * checkers_constants::cell_size_ + checkers_constants::margin_.y;
 		const auto left   = (index % board_size.x) * checkers_constants::cell_size_ + checkers_constants::margin_.x;
-		const auto bottom = top + checkers_constants::cell_size_;
+		const auto bottom = top  + checkers_constants::cell_size_;
 		const auto right  = left + checkers_constants::cell_size_;
 
-		const auto is_white = (white_pawns & (1ull << index)) != 0;
+		const auto is_white = (white_pawns & (0x1ull << index)) != 0;
 
 		const auto piece_color = is_white ? sf::Color::Red : sf::Color::Green;
 

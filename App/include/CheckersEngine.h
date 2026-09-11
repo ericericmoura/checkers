@@ -22,6 +22,8 @@ class CheckersEngine
 public:
 	CheckersEngine();
 
+	checkers_types::bitboard GetBoard(Sides side, Pieces piece) const noexcept;
+	
 	void Print() const noexcept;
 
 	std::expected<GameState, std::string> MovePiece(size_t from, size_t to) noexcept;

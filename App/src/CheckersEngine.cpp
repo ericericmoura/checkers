@@ -19,6 +19,11 @@ CheckersEngine::CheckersEngine()
 	UpdatePossibleCaptures(current_team_);
 }
 
+checkers_types::bitboard CheckersEngine::GetBoard(Sides side, Pieces piece) const noexcept
+{
+	return bb_manager_.GetBoard(side, piece);
+}
+
 void CheckersEngine::Print() const noexcept
 {
 	const auto side_to_play = current_team_ == Sides::kWhite ? "White" : "Black";

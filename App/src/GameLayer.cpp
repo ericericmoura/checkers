@@ -46,10 +46,20 @@ void GameLayer::HandleEvent(sf::Event event)
 }
 
 void GameLayer::Update(float delta)
-{}
+{
+	pieces_renderer_.Update(
+		BoardRenderer::GetBoardSize(),
+		board_renderer_.getPosition(),
+		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kPawn),
+		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kQueen),
+		checkers_engine_.GetBoard(Sides::kBlack, Pieces::kPawn),
+		checkers_engine_.GetBoard(Sides::kBlack, Pieces::kQueen)
+	);
+}
 
 void GameLayer::draw(sf::RenderTarget & target, sf::RenderStates states) const
 {
 	target.setView(camera_);
 	target.draw(board_renderer_);
+	target.draw(pieces_renderer_);
 }

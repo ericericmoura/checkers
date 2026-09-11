@@ -6,7 +6,9 @@
 #include <SFML/Window/Event.hpp>
 
 #include "Core/Layer.h"
+#include "Rendering/PiecesRenderer.h"
 #include "Rendering/BoardRenderer.h"
+#include "CheckersEngine.h"
 
 class GameLayer : public core::Layer
 {
@@ -22,5 +24,9 @@ private:
 	unsigned int pause_menu_screen_id_ = 0;
 
 	sf::View   camera_;
-	BoardRenderer board_renderer_{};
+
+	BoardRenderer  board_renderer_ {};
+	PiecesRenderer pieces_renderer_{};
+
+	CheckersEngine checkers_engine_{};
 };

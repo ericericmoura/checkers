@@ -12,8 +12,8 @@ namespace resources_constants
 constexpr std::string_view pixel_font_key_ = FONTS_PATH "pixel_game_by_suhadidesign.otf";
 
 // TEXTURES
-constexpr std::string_view checkers_board_texture_key_  = TEXTURES_PATH "board_alt.png";
-constexpr std::string_view checkers_pieces_texture_key_ = TEXTURES_PATH "pieces.png";
+constexpr std::string_view checkers_board_texture_key_  = TEXTURES_PATH "board_plain_05.png";
+constexpr std::string_view checkers_pieces_texture_key_ = TEXTURES_PATH "pieces_brown.png";
 constexpr std::string_view window_icon_texture_key_     = TEXTURES_PATH "icon.png";
 
 } // namespace resources_constants

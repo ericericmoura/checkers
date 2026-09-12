@@ -1,3 +1,8 @@
+# License
+
+Pixels Assets by DANI MACCARI from itch.io: https://dani-maccari.itch.io/pixel-checkers
+
+
 # CMake SFML Project Template
 
 This repository template should allow for a fast and hassle-free kick start of your next SFML project using CMake.

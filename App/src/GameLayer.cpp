@@ -26,6 +26,7 @@ GameLayer::GameLayer(unsigned int id) noexcept
 	camera_.setSize(sf::Vector2f(camera_size));
 	camera_.setCenter(sf::Vector2f(camera_size / 2u));
 	camera_.setViewport({ {(1.f - factor) / 2.f, 0.f}, {factor, 1.f} });
+	camera_.zoom(1.1f);
 }
 
 void GameLayer::HandleEvent(sf::Event event)
@@ -47,6 +48,7 @@ void GameLayer::HandleEvent(sf::Event event)
 
 void GameLayer::Update(float delta)
 {
+	// TODO: Update the pieces graphics only when the board state changes, not every frame
 	pieces_renderer_.Update(
 		BoardRenderer::GetBoardSize(),
 		board_renderer_.getPosition(),

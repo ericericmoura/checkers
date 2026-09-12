@@ -3,7 +3,9 @@
 #include <bit>
 #include <cassert>
 
+#include "Core/BitmapStore.h"
 #include "Constants/CheckersConstants.h"
+#include "Constants/ResourcesConstants.h"
 #include "Utils/CheckersUtils.h"
 
 PiecesRenderer::PiecesRenderer()
@@ -12,7 +14,7 @@ PiecesRenderer::PiecesRenderer()
 	constexpr auto vertices_per_piece = 6;
 
 	graphics_.setPrimitiveType(sf::PrimitiveType::Triangles);
-	graphics_.resize(vertices_per_piece * pieces_per_side * pieces_per_side);
+	graphics_.resize(vertices_per_piece * pieces_per_side * pieces_per_side);	
 }
 
 void PiecesRenderer::Update(
@@ -30,37 +32,42 @@ void PiecesRenderer::Update(
 
 	while (all_pawns != 0)
 	{
-		utils::checkers::LogBitboardWithContrast(all_pawns, 'A');
-
-		// BIT BOARD INDEX 1 = A1 OR BOTTOM LEFT
-		// GRAPHICAL CHESS BOARD INDEX 1 = TOP LEFT
 		const auto index = std::countr_zero(all_pawns);
 		all_pawns &= ~(0x1ull << index);
 
-		utils::checkers::LogBitboardWithContrast(0x1ull << index, 'R');
-		utils::checkers::LogBitboardWithContrast(all_pawns, 'A');
+		const auto row = (index / checkers_constants::col_count_);
+		const auto col = (index % checkers_constants::col_count_);
 
-		const auto top    = (index / board_size.x) * checkers_constants::cell_size_ + checkers_constants::margin_.y;
-		const auto left   = (index % board_size.x) * checkers_constants::cell_size_ + checkers_constants::margin_.x;
+		const auto top_offset  = (checkers_constants::cell_size_ * (checkers_constants::row_count_-1)) - (checkers_constants::cell_size_ * row) + checkers_constants::margin_.y;
+		const auto left_offset = (checkers_constants::cell_size_ * col) + checkers_constants::margin_.x;
+
+		const auto top    = top_offset;
+		const auto left   = left_offset;
 		const auto bottom = top  + checkers_constants::cell_size_;
 		const auto right  = left + checkers_constants::cell_size_;
 
 		const auto is_white = (white_pawns & (0x1ull << index)) != 0;
 
-		const auto piece_color = is_white ? sf::Color::Red : sf::Color::Green;
+		const auto texture_index = is_white ? 0 : 2;
 
-		graphics_.append(sf::Vertex(sf::Vector2f(left , top   ), piece_color));
-		graphics_.append(sf::Vertex(sf::Vector2f(right, top   ), piece_color));
-		graphics_.append(sf::Vertex(sf::Vector2f(left , bottom), piece_color));
+		const auto tx_top    = 0;
+		const auto tx_left   = checkers_constants::cell_size_ * texture_index;
+		const auto tx_bottom = tx_top  + checkers_constants::cell_size_-1;
+		const auto tx_right  = tx_left + checkers_constants::cell_size_-1;
 
-		graphics_.append(sf::Vertex(sf::Vector2f(right, top   ), piece_color));
-		graphics_.append(sf::Vertex(sf::Vector2f(right, bottom), piece_color));
-		graphics_.append(sf::Vertex(sf::Vector2f(left , bottom), piece_color));
+		graphics_.append(sf::Vertex(sf::Vector2f(left , top   ), sf::Color::White, sf::Vector2f(tx_left   , tx_top   )));
+		graphics_.append(sf::Vertex(sf::Vector2f(right, top   ), sf::Color::White, sf::Vector2f(tx_right  , tx_top   )));
+		graphics_.append(sf::Vertex(sf::Vector2f(left , bottom), sf::Color::White, sf::Vector2f(tx_left   , tx_bottom)));
+
+		graphics_.append(sf::Vertex(sf::Vector2f(right, top   ), sf::Color::White, sf::Vector2f(tx_right  , tx_top   )));
+		graphics_.append(sf::Vertex(sf::Vector2f(right, bottom), sf::Color::White, sf::Vector2f(tx_right  , tx_bottom)));
+		graphics_.append(sf::Vertex(sf::Vector2f(left , bottom), sf::Color::White, sf::Vector2f(tx_left   , tx_bottom)));
 	}
 }
 
 void PiecesRenderer::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
 	states.transform *= getTransform();
+	states.texture    = core::BitmapStore::Get().GetTexture(resources_constants::checkers_pieces_texture_key_.data());
 	target.draw(graphics_, states);
 }

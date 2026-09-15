@@ -158,17 +158,16 @@ GameState CheckersEngine::FinishTurn() noexcept
 		return GameState::kWhiteWon;
 	}
 
-	UpdatePossibleCaptures(current_team_);
-
 	const auto is_combo = CheckForCombos();
 	if (!is_combo)
 	{
 		current_team_ = GetEnemySide();
 
-		last_played_piece_to_ = {};
+		last_played_piece_to_ = {};		
+	}	
+	just_captured_piece_ = false;
 
-		UpdatePossibleCaptures(current_team_);
-	}
+	UpdatePossibleCaptures(current_team_);
 
 	return GameState::kPlaying;
 }

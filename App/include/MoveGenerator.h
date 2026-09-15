@@ -25,7 +25,7 @@ private:
 	checkers_types::ray_list diagonal_rays_{};
 
 	checkers_types::bitboard GetMaskedRayMovements(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept;
-	checkers_types::bitboard GetMaskedRayCaptures (DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept;
+	checkers_types::bitboard GetMaskedRayCaptures (DiagonalDirections dir, size_t i, checkers_types::bitboard enemies, checkers_types::bitboard allies) const noexcept;
 
 	static checkers_types::bitboard MovePawnForward(Sides side, checkers_types::bitboard pawn, size_t shift) noexcept;
 

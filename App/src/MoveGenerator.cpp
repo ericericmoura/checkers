@@ -31,11 +31,10 @@ checkers_types::bitboard MoveGenerator::GetMovementsForQueen(size_t i, checkers_
 
 checkers_types::bitboard MoveGenerator::GetCapturesForQueen(size_t i, checkers_types::bitboard enemies, checkers_types::bitboard allies) const noexcept
 {
-	const auto blockers = enemies | allies;
 	checkers_types::bitboard result = 0;
 	for (const auto dir : utils::directions::kDiagonalDirections)
 	{
-		result |= GetMaskedRayCaptures(dir, i, blockers);		
+		result |= GetMaskedRayCaptures(dir, i, enemies, allies);
 	}
 	return result;
 }
@@ -153,30 +152,28 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayMovements(DiagonalDirections
 	return movements;
 }
 
-checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept
+checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections dir, size_t i, checkers_types::bitboard enemies, checkers_types::bitboard allies) const noexcept
 {
+	const auto blockers = enemies | allies;
+
 	// Cast a ray from the user into the specific direction
-	const auto mask = CastRay(dir, i, blockers);	
+	const auto mask = CastRay(dir, i, blockers);
 	if (!mask.has_value())
 	{
 		return {};
 	}
-	core::debugging::LogInfo("Mask: ");
-	utils::checkers::LogBitboardWithContrast(mask.value(), 'M');
-
 	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
 
 	const auto first_blocker_index = GetFirstBlockerIndex(mask.value(), vertical_dir == VerticalDirections::kUp);
 
+	if (((0x1ull << first_blocker_index) & allies) != 0)
+	{
+		return {};
+	}
+
 	// If there's only one blocker, return
 	if (std::popcount(mask.value()) == 1)
 	{
-		core::debugging::LogInfo("Ray: ");
-		utils::checkers::LogBitboardWithContrast(GetRay(dir, first_blocker_index), 'R');
-
-		core::debugging::LogInfo("Blockers: ");
-		utils::checkers::LogBitboardWithContrast(blockers, 'B');
-
 		return GetRay(dir, first_blocker_index) & ~blockers;
 	}
 	
@@ -184,15 +181,6 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections 
 
 	// Get the second blocker	
 	const auto second_blocker_index = GetFirstBlockerIndex(mask_copy, vertical_dir == VerticalDirections::kUp);
-
-	core::debugging::LogInfo("Ray: ");
-	utils::checkers::LogBitboardWithContrast(GetRay(dir, first_blocker_index), 'R');
-
-	core::debugging::LogInfo("Second Ray: ");
-	utils::checkers::LogBitboardWithContrast(GetRay(dir, second_blocker_index), 'R');
-
-	core::debugging::LogInfo("Blockers: ");
-	utils::checkers::LogBitboardWithContrast(blockers, 'B');
 
 	// Add the rays from the first blocker
 	// and remove the rays past the second blocker

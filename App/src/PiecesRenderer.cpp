@@ -35,14 +35,10 @@ void PiecesRenderer::Update(
 		const auto index = std::countr_zero(all_pawns);
 		all_pawns &= ~(0x1ull << index);
 
-		const auto row = (index / checkers_constants::col_count_);
-		const auto col = (index % checkers_constants::col_count_);
+		const auto piece_position = utils::checkers::BitboardIndexToPosition(index);
 
-		const auto top_offset  = (checkers_constants::cell_size_ * (checkers_constants::row_count_-1)) - (checkers_constants::cell_size_ * row) + checkers_constants::margin_.y;
-		const auto left_offset = (checkers_constants::cell_size_ * col) + checkers_constants::margin_.x;
-
-		const auto top    = top_offset;
-		const auto left   = left_offset;
+		const auto top    = piece_position.y;
+		const auto left   = piece_position.x;
 		const auto bottom = top  + checkers_constants::cell_size_;
 		const auto right  = left + checkers_constants::cell_size_;
 

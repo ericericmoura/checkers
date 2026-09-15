@@ -19,4 +19,6 @@ constexpr uint64_t file_b = 0x0202020202020202;
 constexpr uint64_t file_g = 0x4040404040404040;
 constexpr uint64_t file_h = 0x8080808080808080;
 
+constexpr std::array<char, 8> files = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
+
 } // namespace checkers_constants

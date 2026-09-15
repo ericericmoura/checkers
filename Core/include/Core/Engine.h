@@ -10,6 +10,7 @@
 #include <SFML/Window/WindowEnums.hpp>
 
 #include "Debugging/Logging.h"
+#include <SFML/Graphics/RenderWindow.hpp>
 
 namespace core
 {
@@ -88,6 +89,8 @@ public:
 	void TransitionQueuedLayers();
 
 	sf::Vector2u GetCurrentDisplaySize() const noexcept;
+
+	const sf::RenderWindow& GetWindow() const noexcept;	
 
 	static sf::Time GetElapsedTime() noexcept;
 	static Engine& Get();

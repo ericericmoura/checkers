@@ -12,6 +12,8 @@
 #include "GameHudLayer.h"
 #include "MainMenuLayer.h"
 #include "Rendering/BoardRenderer.h"
+#include "Utils/CheckersUtils.h"
+#include "CommandParser.h"
 
 GameLayer::GameLayer(unsigned int id) noexcept
 	: Layer(id)
@@ -27,6 +29,15 @@ GameLayer::GameLayer(unsigned int id) noexcept
 	camera_.setCenter(sf::Vector2f(camera_size / 2u));
 	camera_.setViewport({ {(1.f - factor) / 2.f, 0.f}, {factor, 1.f} });
 	camera_.zoom(1.1f);
+
+	pieces_renderer_.Update(
+		BoardRenderer::GetBoardSize(),
+		board_renderer_.getPosition(),
+		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kPawn),
+		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kQueen),
+		checkers_engine_.GetBoard(Sides::kBlack, Pieces::kPawn),
+		checkers_engine_.GetBoard(Sides::kBlack, Pieces::kQueen)
+	);
 }
 
 void GameLayer::HandleEvent(sf::Event event)
@@ -44,23 +55,44 @@ void GameLayer::HandleEvent(sf::Event event)
 			pause_menu_screen_id_ = core::Engine::Get().PushLayer<GameHudLayer>();
 		}
 	}
-}
-
-void GameLayer::Update(float delta)
-{
-	// TODO: Update the pieces graphics only when the board state changes, not every frame
-	pieces_renderer_.Update(
-		BoardRenderer::GetBoardSize(),
-		board_renderer_.getPosition(),
-		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kPawn),
-		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kQueen),
-		checkers_engine_.GetBoard(Sides::kBlack, Pieces::kPawn),
-		checkers_engine_.GetBoard(Sides::kBlack, Pieces::kQueen)
-	);
+	if (auto mouse_event = event.getIf<sf::Event::MouseButtonPressed>())
+	{
+		if (mouse_event->button == sf::Mouse::Button::Left)
+		{
+			const auto world_pos = core::Engine::Get().GetWindow().mapPixelToCoords(mouse_event->position, camera_);
+			const auto board_index = utils::checkers::PositionToBitboardIndex(world_pos);
+			if (!checkers_input_manager_.IsIndexSelected())
+			{
+				checkers_input_manager_.SelectIndex(board_index);
+				return;
+			}
+			checkers_input_manager_.TargetIndex(board_index);
+			const auto command = checkers_input_manager_.GetCommand();
+			if (!command)
+			{
+				core::debugging::LogError("Invalid command: {}", command.error());
+				return;
+			}
+			const auto result = command_parser::RunCommand(checkers_engine_, std::format("{} {}", CommandMove::kKey.data(), command.value()));
+			if (!result)
+			{
+				core::debugging::LogError("Failed to run command: {}", result.error());
+				return;
+			}
+			pieces_renderer_.Update(
+				BoardRenderer::GetBoardSize(),
+				board_renderer_.getPosition(),
+				checkers_engine_.GetBoard(Sides::kWhite, Pieces::kPawn),
+				checkers_engine_.GetBoard(Sides::kWhite, Pieces::kQueen),
+				checkers_engine_.GetBoard(Sides::kBlack, Pieces::kPawn),
+				checkers_engine_.GetBoard(Sides::kBlack, Pieces::kQueen)
+			);
+		}
+	}
 }
 
 void GameLayer::draw(sf::RenderTarget & target, sf::RenderStates states) const
-{
+{	
 	target.setView(camera_);
 	target.draw(board_renderer_);
 	target.draw(pieces_renderer_);

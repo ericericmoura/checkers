@@ -125,6 +125,11 @@ sf::Vector2u core::Engine::GetCurrentDisplaySize() const noexcept
 	return specification_.window_specification_.video_mode_.size;
 }
 
+const sf::RenderWindow& core::Engine::GetWindow() const noexcept
+{
+	return window_;
+}
+
 sf::Time core::Engine::GetElapsedTime() noexcept
 {
 	return Get().elapsed_time_;

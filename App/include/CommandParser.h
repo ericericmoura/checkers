@@ -5,6 +5,8 @@
 #include <string_view>
 #include <variant>
 
+#include "CheckersEngine.h"
+
 struct CommandMove 
 {
 	static constexpr std::string_view kKey = "move";
@@ -44,6 +46,8 @@ using Command = std::variant<CommandMove, CommandRedo, CommandUndo, CommandDispl
 
 namespace command_parser
 {
+
+std::expected<void, std::string> RunCommand(CheckersEngine& engine, std::string cmd) noexcept;
 
 std::expected<Command, std::string> ParseCommand(std::string_view command) noexcept;
 

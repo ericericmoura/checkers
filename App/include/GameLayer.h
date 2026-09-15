@@ -8,6 +8,7 @@
 #include "Core/Layer.h"
 #include "Rendering/PiecesRenderer.h"
 #include "Rendering/BoardRenderer.h"
+#include "Rendering/BoardIndicatorsRenderer.h"
 #include "CheckersEngine.h"
 #include "CheckersInputManager.h"
 
@@ -27,6 +28,7 @@ private:
 
 	CheckersInputManager checkers_input_manager_{};
 
+	BoardIndicatorsRenderer board_indicators_renderer_{};
 	BoardRenderer  board_renderer_ {};
 	PiecesRenderer pieces_renderer_{};
 

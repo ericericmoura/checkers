@@ -26,4 +26,12 @@ public:
 
 private:
 	sf::VertexArray graphics_;
+
+	void AppendPieces(
+		sf::Vector2f board_position,
+		checkers_types::bitboard white_bb,
+		checkers_types::bitboard black_bb,
+		size_t white_texture_index,
+		size_t black_texture_index
+	);
 };

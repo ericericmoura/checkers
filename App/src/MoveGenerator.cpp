@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include "Core/Utils/BitUtils.h"
+#include "Core/Debugging/Logging.h"
 #include "Enums/Directions.h"
 #include "Enums/Sides.h"
 #include "Constants/CheckersConstants.h"
@@ -34,7 +35,7 @@ checkers_types::bitboard MoveGenerator::GetCapturesForQueen(size_t i, checkers_t
 	checkers_types::bitboard result = 0;
 	for (const auto dir : utils::directions::kDiagonalDirections)
 	{
-		result |= GetMaskedRayCaptures(dir, i, blockers);
+		result |= GetMaskedRayCaptures(dir, i, blockers);		
 	}
 	return result;
 }
@@ -155,11 +156,14 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayMovements(DiagonalDirections
 checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept
 {
 	// Cast a ray from the user into the specific direction
-	const auto mask = CastRay(dir, i, blockers);
+	const auto mask = CastRay(dir, i, blockers);	
 	if (!mask.has_value())
 	{
 		return {};
 	}
+	core::debugging::LogInfo("Mask: ");
+	utils::checkers::LogBitboardWithContrast(mask.value(), 'M');
+
 	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
 
 	const auto first_blocker_index = GetFirstBlockerIndex(mask.value(), vertical_dir == VerticalDirections::kUp);
@@ -167,6 +171,12 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections 
 	// If there's only one blocker, return
 	if (std::popcount(mask.value()) == 1)
 	{
+		core::debugging::LogInfo("Ray: ");
+		utils::checkers::LogBitboardWithContrast(GetRay(dir, first_blocker_index), 'R');
+
+		core::debugging::LogInfo("Blockers: ");
+		utils::checkers::LogBitboardWithContrast(blockers, 'B');
+
 		return GetRay(dir, first_blocker_index) & ~blockers;
 	}
 	
@@ -174,6 +184,15 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections 
 
 	// Get the second blocker	
 	const auto second_blocker_index = GetFirstBlockerIndex(mask_copy, vertical_dir == VerticalDirections::kUp);
+
+	core::debugging::LogInfo("Ray: ");
+	utils::checkers::LogBitboardWithContrast(GetRay(dir, first_blocker_index), 'R');
+
+	core::debugging::LogInfo("Second Ray: ");
+	utils::checkers::LogBitboardWithContrast(GetRay(dir, second_blocker_index), 'R');
+
+	core::debugging::LogInfo("Blockers: ");
+	utils::checkers::LogBitboardWithContrast(blockers, 'B');
 
 	// Add the rays from the first blocker
 	// and remove the rays past the second blocker
@@ -190,8 +209,8 @@ checkers_types::bitboard MoveGenerator::MovePawnForward(Sides side, checkers_typ
 size_t MoveGenerator::GetFirstBlockerIndex(checkers_types::bitboard board, bool is_above) noexcept
 {
 	return is_above
-		? static_cast<size_t>(checkers_constants::total_squares_ - 1) - std::countl_zero(board)
-		: std::countr_zero(board);
+		? std::countr_zero(board)
+		: static_cast<size_t>(checkers_constants::total_squares_ - 1) - std::countl_zero(board);
 }
 
 std::optional<checkers_types::bitboard> MoveGenerator::CastRay(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept

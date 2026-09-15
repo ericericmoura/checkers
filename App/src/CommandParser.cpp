@@ -110,44 +110,6 @@ std::expected<Command, std::string> ParseCommandWithArguments(std::string_view c
 
 } // anonymous namespace
 
-std::expected<void, std::string> command_parser::RunCommand(CheckersEngine& engine, std::string cmd) noexcept
-{
-	const auto command = command_parser::ParseCommand(cmd);
-
-	if (!command)
-	{
-		return std::unexpected(command.error());
-	}
-
-	if (auto value = std::get_if<CommandMove>(&command.value()))
-	{
-		const auto result = engine.MovePiece(value->move_from_, value->move_to_);
-		if (!result)
-		{
-			return std::unexpected(result.error());
-		}
-		return {};
-	}
-	if (auto value = std::get_if<CommandDisplayMoves>(&command.value()))
-	{
-		const auto piece_moves = engine.GetMoves(value->piece_index_);
-		if (!piece_moves)
-		{
-			return std::unexpected(piece_moves.error());
-		}
-		return {};
-	}
-	if (auto value = std::get_if<CommandDisplayCaptures>(&command.value()))
-	{
-		const auto piece_captures = engine.GetCaptures(value->piece_index_);
-		if (!piece_captures)
-		{
-			return std::unexpected(piece_captures.error());
-		}
-	}
-	return {};
-}
-
 std::expected<Command, std::string> command_parser::ParseCommand(std::string_view cmd) noexcept
 {
 	if (cmd.length() > 4)

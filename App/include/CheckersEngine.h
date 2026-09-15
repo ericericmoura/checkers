@@ -20,8 +20,6 @@ enum class GameState
 class CheckersEngine
 {
 public:
-	CheckersEngine();
-
 	checkers_types::bitboard GetBoard(Sides side, Pieces piece) const noexcept;
 	
 	void Print() const noexcept;
@@ -30,6 +28,8 @@ public:
 
 	std::expected<checkers_types::bitboard, std::string> GetMoves   (size_t at) const noexcept;
 	std::expected<checkers_types::bitboard, std::string> GetCaptures(size_t at) const noexcept;
+
+	checkers_types::bitboard GetCaptures() const noexcept;
 
 	Sides GetEnemySide() const noexcept;
 	static Sides GetEnemySide(Sides side) noexcept;
@@ -41,7 +41,7 @@ private:
 	bool game_over_ = false;
 	bool just_captured_piece_ = false;
 
-	Sides current_team_ = Sides::kBlack;
+	Sides current_team_ = Sides::kWhite;
 
 	checkers_types::bitboard available_pawn_captures_ = 0;
 	checkers_types::bitboard available_queen_captures_ = 0;

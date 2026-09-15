@@ -13,7 +13,6 @@
 #include "MainMenuLayer.h"
 #include "Rendering/BoardRenderer.h"
 #include "Utils/CheckersUtils.h"
-#include "CommandParser.h"
 
 GameLayer::GameLayer(unsigned int id) noexcept
 	: Layer(id)
@@ -64,19 +63,39 @@ void GameLayer::HandleEvent(sf::Event event)
 			if (!checkers_input_manager_.IsIndexSelected())
 			{
 				checkers_input_manager_.SelectIndex(board_index);
+
+				const auto moves = checkers_input_manager_.GetMovementsForSelectedIndex(checkers_engine_);
+				if (!moves)
+				{
+					core::debugging::LogError("Failed to get moves for selected index: {}", moves.error());
+					return;
+				}
+				board_indicators_renderer_.UpdateMoves(
+					board_renderer_.getPosition(),
+					moves.value()
+				);				
 				return;
 			}
-			checkers_input_manager_.TargetIndex(board_index);
-			const auto command = checkers_input_manager_.GetCommand();
-			if (!command)
+
+			const auto movement_result = checkers_input_manager_.MoveSelectedIndexTo(checkers_engine_, board_index);
+			checkers_input_manager_.DeselectIndex();
+			board_indicators_renderer_.ClearMoves();
+
+			// UPDATE CAPTURES
+			board_indicators_renderer_.ClearCaptures();
+			const auto captures = checkers_input_manager_.GetCaptures(checkers_engine_);
+			if (captures > 0)
 			{
-				core::debugging::LogError("Invalid command: {}", command.error());
-				return;
+				board_indicators_renderer_.UpdateCaptures(
+					board_renderer_.getPosition(),
+					captures
+				);
 			}
-			const auto result = command_parser::RunCommand(checkers_engine_, std::format("{} {}", CommandMove::kKey.data(), command.value()));
-			if (!result)
+			// END UPDATE CAPTURES
+
+			if (!movement_result)
 			{
-				core::debugging::LogError("Failed to run command: {}", result.error());
+				core::debugging::LogError("Failed to move piece: {}", movement_result.error());
 				return;
 			}
 			pieces_renderer_.Update(
@@ -88,6 +107,11 @@ void GameLayer::HandleEvent(sf::Event event)
 				checkers_engine_.GetBoard(Sides::kBlack, Pieces::kQueen)
 			);
 		}
+		else if (mouse_event->button == sf::Mouse::Button::Right)
+		{
+			checkers_input_manager_.DeselectIndex();
+			board_indicators_renderer_.ClearMoves();
+		}
 	}
 }
 
@@ -96,4 +120,5 @@ void GameLayer::draw(sf::RenderTarget & target, sf::RenderStates states) const
 	target.setView(camera_);
 	target.draw(board_renderer_);
 	target.draw(pieces_renderer_);
+	target.draw(board_indicators_renderer_);
 }

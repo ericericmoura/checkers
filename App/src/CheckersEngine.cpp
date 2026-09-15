@@ -14,11 +14,6 @@
 #include "Enums/Directions.h"
 #include "CheckersTypes.h"
 
-CheckersEngine::CheckersEngine()
-{
-	UpdatePossibleCaptures(current_team_);
-}
-
 checkers_types::bitboard CheckersEngine::GetBoard(Sides side, Pieces piece) const noexcept
 {
 	return bb_manager_.GetBoard(side, piece);
@@ -65,9 +60,7 @@ std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, siz
 		? move_generator_.GetMovementsForPawn (from, current_team_)
 		: move_generator_.GetMovementsForQueen(from, bb_manager_.GetBoard(GetEnemySide()), bb_manager_.GetBoard(current_team_));
 	
-	const auto captures = piece_type == Pieces::kPawn
-		? available_pawn_captures_
-		: available_queen_captures_;
+	const auto captures = available_pawn_captures_ | available_queen_captures_;
 
 	if (!core::utils::bits::IsBitSet(movements | captures, to))
 	{
@@ -147,6 +140,11 @@ std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetCaptures
 	return captures;
 }
 
+checkers_types::bitboard CheckersEngine::GetCaptures() const noexcept
+{
+	return available_pawn_captures_ | available_queen_captures_;
+}
+
 GameState CheckersEngine::FinishTurn() noexcept
 {
 	if (bb_manager_.GetBoard(Sides::kWhite) == 0)
@@ -160,15 +158,17 @@ GameState CheckersEngine::FinishTurn() noexcept
 		return GameState::kWhiteWon;
 	}
 
+	UpdatePossibleCaptures(current_team_);
+
 	const auto is_combo = CheckForCombos();
 	if (!is_combo)
 	{
 		current_team_ = GetEnemySide();
 
 		last_played_piece_to_ = {};
-	}
 
-	UpdatePossibleCaptures(current_team_);
+		UpdatePossibleCaptures(current_team_);
+	}
 
 	return GameState::kPlaying;
 }
@@ -226,9 +226,9 @@ void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
 	available_pawn_captures_  = 0;
 	available_queen_captures_ = 0;
 
-	const auto enemies = bb_manager_.GetBoard(GetEnemySide());
+	const auto enemies = bb_manager_.GetBoard(GetEnemySide(side));
 
-	auto allies = bb_manager_.GetBoard(current_team_);
+	auto allies = bb_manager_.GetBoard(side);
 	while (std::popcount(allies) != 0)
 	{
 		const auto i = std::countr_zero(allies);
@@ -239,7 +239,7 @@ void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
 
 		if (type.value() == Pieces::kPawn)
 		{
-			available_pawn_captures_  |= move_generator_.GetCapturesForPawn (current_team_, allies, enemies, i);
+			available_pawn_captures_  |= move_generator_.GetCapturesForPawn (side, allies, enemies, i);
 		}
 		else
 		{

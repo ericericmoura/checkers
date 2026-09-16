@@ -28,6 +28,8 @@ struct WindowSpecification
 
 	sf::State	  window_state_ = sf::State::Windowed;
 	sf::VideoMode video_mode_  = {};
+
+	bool maintain_aspect_ratio_ = false;
 };
 
 /* Engine specifications

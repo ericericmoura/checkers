@@ -13,12 +13,13 @@ CheckersHUD::CheckersHUD()
 	hud_camera_.setSize  (sf::Vector2f(display_size));
 	hud_camera_.setCenter(sf::Vector2f(display_size / 2u));
 
-	error_text_.setCharacterSize(30);
-	error_text_.setPosition({ 5.f, 5.f });
+	error_text_.setCharacterSize(35);
+	error_text_.setPosition({ 15.f, 85.f });
 	error_text_.setFillColor(sf::Color::Red);
 	HideErrorText();
 
-	current_team_text_.setCharacterSize(40);
+	current_team_text_.setCharacterSize(65);
+	current_team_text_.setPosition({ 15.f, 20.f });
 	UpdateCurrentTeamText(Sides::kWhite);
 }
 
@@ -26,7 +27,6 @@ void CheckersHUD::UpdateCurrentTeamText(Sides current_team) noexcept
 {
 	current_team_text_.setString(std::format("Current Team: {}", current_team == Sides::kWhite ? "White" : "Black"));
 	const auto x_center = core::Engine::Get().GetCurrentDisplaySize().x / 2.f - current_team_text_.getGlobalBounds().size.x / 2.f;
-	current_team_text_.setPosition({ x_center, 5.f });
 }
 
 void CheckersHUD::HideErrorText() noexcept

@@ -26,7 +26,7 @@ GameLayer::GameLayer(unsigned int id) noexcept
 
 	camera_.setSize(sf::Vector2f(camera_size));
 	camera_.setCenter(sf::Vector2f(camera_size / 2u));
-	camera_.setViewport({ {(1.f - factor) / 2.f, 0.f}, {factor, 1.f} });
+	camera_.setViewport({ {(1.f - factor), 0.f}, {factor, 1.f} });
 	camera_.zoom(1.1f);
 
 	pieces_renderer_.Update(

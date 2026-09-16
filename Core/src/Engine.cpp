@@ -12,6 +12,7 @@
 #include <SFML/System/Vector2.hpp>
 
 #include "Core/Debugging/Logging.h"
+#include "Core/Utils/ScreenUtils.h"
 #include "Core/Layer.h"
 
 core::Engine::Engine(const EngineSpecification& engine_specification)
@@ -43,6 +44,12 @@ void core::Engine::Run()
 			{
 				debugging::LogInfo("Exiting the main loop...");
 				window_.close();
+			}
+			if (event->is<sf::Event::Resized>())
+			{				
+				const auto size = core::utils::screen::ResizeToMatchRatio(window_.getSize(), specification_.window_specification_.video_mode_.size);
+
+				window_.setSize(size);
 			}
 			for (auto& [id, layer] : layer_stack_)
 			{
@@ -152,7 +159,7 @@ void core::Engine::CreateWindow()
 		specification_.window_specification_.video_mode_,
 		specification_.window_specification_.title_,
 		specification_.window_specification_.window_state_
-	);
+	);	
 	if (specification_.framerate_limit.has_value())
 	{
 		window_.setFramerateLimit(specification_.framerate_limit.value());

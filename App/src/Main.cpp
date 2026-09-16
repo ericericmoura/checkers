@@ -3,6 +3,7 @@
 #include <SFML/Window/VideoMode.hpp>
 
 #include "Core/Engine.h"
+#include "Core/Utils/ScreenUtils.h"
 #include "GameLayer.h"	
 #include "Constants/WindowConstants.h"
 #include "Constants/ResourcesConstants.h"
@@ -15,6 +16,8 @@ int main()
 	engine_specs.window_specification_.title_ = window_constants::title_;
 	engine_specs.window_specification_.background_color_ = window_constants::background_color_;
 	engine_specs.window_specification_.video_mode_ = sf::VideoMode::getDesktopMode();
+	engine_specs.window_specification_.video_mode_.size = core::utils::screen::ResizeToMatchRatio(engine_specs.window_specification_.video_mode_.size, sf::Vector2u({ 280, 175 }));
+	engine_specs.window_specification_.maintain_aspect_ratio_ = true;
 	
 	core::Engine engine{engine_specs};
 	engine.PushLayer<GameLayer>();

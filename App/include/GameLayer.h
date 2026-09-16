@@ -11,6 +11,7 @@
 #include "Rendering/BoardIndicatorsRenderer.h"
 #include "CheckersEngine.h"
 #include "CheckersInputManager.h"
+#include "CheckersHUD.h"
 
 class GameLayer : public core::Layer
 {
@@ -29,8 +30,11 @@ private:
 	CheckersInputManager checkers_input_manager_{};
 
 	BoardIndicatorsRenderer board_indicators_renderer_{};
+
 	BoardRenderer  board_renderer_ {};
 	PiecesRenderer pieces_renderer_{};
 
 	CheckersEngine checkers_engine_{};
+
+	CheckersHUD hud_{};
 };

@@ -34,6 +34,10 @@ public:
 	Sides GetEnemySide() const noexcept;
 	static Sides GetEnemySide(Sides side) noexcept;
 
+	Sides GetCurrentTeam() const noexcept;
+
+	bool IsIndexOccupied(size_t i) const noexcept;
+
 private:
 	BitboardManager bb_manager_{};
 	MoveGenerator   move_generator_{};

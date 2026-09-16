@@ -26,6 +26,11 @@ bool CheckersInputManager::IsIndexSelected() const noexcept
 	return selected_index_.has_value();
 }
 
+std::optional<size_t> CheckersInputManager::GetSelectedIndex() const noexcept
+{
+	return selected_index_;
+}
+
 std::expected<void, std::string> CheckersInputManager::MoveSelectedIndexTo(CheckersEngine& engine, size_t target_index) noexcept
 {
 	if (!selected_index_)

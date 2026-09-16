@@ -58,15 +58,24 @@ void GameLayer::HandleEvent(sf::Event event)
 	{
 		if (mouse_event->button == sf::Mouse::Button::Left)
 		{
+			hud_.HideErrorText();
+
 			const auto world_pos = core::Engine::Get().GetWindow().mapPixelToCoords(mouse_event->position, camera_);
 			const auto board_index = utils::checkers::PositionToBitboardIndex(world_pos);
 			if (!checkers_input_manager_.IsIndexSelected())
 			{
+				if (!checkers_engine_.IsIndexOccupied(board_index))
+				{
+					core::debugging::LogError("Invalid selection: there's no piece at index {}", board_index);
+					hud_.UpdateCurrentErrorText("Invalid selection: there's no piece at that square.");
+					return;
+				}
 				checkers_input_manager_.SelectIndex(board_index);
 
 				const auto moves = checkers_input_manager_.GetMovementsForSelectedIndex(checkers_engine_);
 				if (!moves)
 				{
+					hud_.UpdateCurrentErrorText(moves.error());
 					core::debugging::LogError("Failed to get moves for selected index: {}", moves.error());
 					return;
 				}
@@ -74,6 +83,11 @@ void GameLayer::HandleEvent(sf::Event event)
 					board_renderer_.getPosition(),
 					moves.value()
 				);				
+				return;
+			}
+
+			if (auto index = checkers_input_manager_.GetSelectedIndex(); index.has_value() && index.value() == board_index)
+			{				
 				return;
 			}
 
@@ -95,6 +109,7 @@ void GameLayer::HandleEvent(sf::Event event)
 
 			if (!movement_result)
 			{
+				hud_.UpdateCurrentErrorText(movement_result.error());
 				core::debugging::LogError("Failed to move piece: {}", movement_result.error());
 				return;
 			}
@@ -106,6 +121,9 @@ void GameLayer::HandleEvent(sf::Event event)
 				checkers_engine_.GetBoard(Sides::kBlack, Pieces::kPawn),
 				checkers_engine_.GetBoard(Sides::kBlack, Pieces::kQueen)
 			);
+
+			hud_.UpdateCurrentTeamText(checkers_engine_.GetCurrentTeam());
+			hud_.HideErrorText();
 		}
 		else if (mouse_event->button == sf::Mouse::Button::Right)
 		{
@@ -118,7 +136,8 @@ void GameLayer::HandleEvent(sf::Event event)
 void GameLayer::draw(sf::RenderTarget & target, sf::RenderStates states) const
 {	
 	target.setView(camera_);
-	target.draw(board_renderer_);
-	target.draw(pieces_renderer_);
-	target.draw(board_indicators_renderer_);
+	target.draw(board_renderer_, states);
+	target.draw(pieces_renderer_, states);
+	target.draw(board_indicators_renderer_, states);
+	target.draw(hud_, states);
 }

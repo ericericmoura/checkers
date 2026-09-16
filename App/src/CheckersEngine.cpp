@@ -36,6 +36,16 @@ Sides CheckersEngine::GetEnemySide(Sides side) noexcept
 	return side == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
 }
 
+Sides CheckersEngine::GetCurrentTeam() const noexcept
+{
+	return current_team_;
+}
+
+bool CheckersEngine::IsIndexOccupied(size_t i) const noexcept
+{
+	return bb_manager_.IsIndexOccupied(i);
+}
+
 std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, size_t to) noexcept
 {	
 	if (last_played_piece_to_.has_value() && last_played_piece_to_.value() != from)

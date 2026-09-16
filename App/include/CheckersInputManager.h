@@ -16,6 +16,8 @@ public:
 
 	void DeselectIndex() noexcept;
 	bool IsIndexSelected() const noexcept;
+	
+	std::optional<size_t> GetSelectedIndex() const noexcept;
 
 	std::expected<void, std::string> MoveSelectedIndexTo(CheckersEngine& engine, size_t target_index) noexcept;
 

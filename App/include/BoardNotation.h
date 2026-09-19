@@ -13,8 +13,8 @@ static std::expected<std::string, std::string> BitboardIndexToNotation(size_t in
 		return std::unexpected("Invalid bitboard index: out of bounds.");
 	}
 
-	const auto row = index / checkers_constants::col_count_ + 1;
-	const auto col = checkers_constants::files[index % checkers_constants::col_count_];
+	const auto row = index / checkers::constants::col_count_ + 1;
+	const auto col = checkers::constants::files[index % checkers::constants::col_count_];
 
 	return col + std::to_string(row);
 }

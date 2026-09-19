@@ -13,12 +13,12 @@ class BoardIndicatorsRenderer : public sf::Transformable, public sf::Drawable
 public:
 	void UpdateMoves(
 		sf::Vector2f board_position,
-		checkers_types::bitboard movements
+		Bitboard movements
 	);
 
 	void UpdateCaptures(
 		sf::Vector2f board_position,
-		checkers_types::bitboard captures
+		Bitboard captures
 	);
 
 	void ClearMoves() noexcept;
@@ -32,7 +32,7 @@ private:
 
 	static sf::VertexArray UpdateArray(
 		sf::Vector2f board_position,
-		checkers_types::bitboard bb,
+		Bitboard bb,
 		sf::Color color
 	);
 };

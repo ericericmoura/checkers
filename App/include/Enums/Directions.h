@@ -1,5 +1,10 @@
 #pragma once
 
+#include <array>
+
+namespace checkers
+{
+
 enum class DiagonalDirections : int
 {
 	kNorthWest,
@@ -20,6 +25,19 @@ enum class Directions : int
 
 enum class VerticalDirections
 {
-	kUp, 
+	kUp,
 	kDown
 };
+
+DiagonalDirections GetOppositeDirection (DiagonalDirections dir  ) noexcept;
+VerticalDirections GetVerticalDirection(DiagonalDirections dir   ) noexcept;
+DiagonalDirections GetDiagonalDirection(bool is_east, bool is_up ) noexcept;
+
+constexpr std::array<DiagonalDirections, 4> kDiagonalDirections = 
+{
+    DiagonalDirections::kNorthWest, DiagonalDirections::kNorthEast,
+    DiagonalDirections::kSouthWest, DiagonalDirections::kSouthEast
+};
+
+
+} // namespace checkers

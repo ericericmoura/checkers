@@ -8,10 +8,11 @@
 #include <fmt/color.h>
 
 #include "Constants/CheckersConstants.h"
-#include "Core/Utils/BitUtils.h"
 #include "Enums/Pieces.h"
 #include "Enums/Sides.h"
-#include "CheckersTypes.h"
+
+namespace checkers
+{
 
 BitboardManager::BitboardManager() noexcept
 {
@@ -21,35 +22,31 @@ BitboardManager::BitboardManager() noexcept
 
 void BitboardManager::Print() const noexcept
 {
-	fmt::print("\n");
-	for (int rank = checkers_constants::row_count_ - 1; rank >= 0; --rank)
-	{
-		fmt::print("{}  ", rank + 1);
-		for (int file = 0; file < checkers_constants::col_count_; ++file)
+	auto board = white_bb_ | white_bb_;
+
+	board.DrainBits([this](size_t index) {
+		const auto side = GetSideByIndex(index);
+		const auto type = GetPieceTypeByIndex(index);
+
+		if (!side.has_value())
 		{
-			const auto index = file + rank * checkers_constants::col_count_;
-			const auto side = GetSideByIndex(index);
-			const auto type = GetPieceTypeByIndex(index);
-			
-			if (!side.has_value())
-			{
-				fmt::print("0 ");
-				continue;
-			}
-			auto symbol = 'P';
-			auto style  = side == Sides::kBlack 
-				? fg(fmt::color::orange_red  ) | fmt::emphasis::bold
-				: fg(fmt::color::light_yellow) | fmt::emphasis::bold;
-
-			if (type == Pieces::kQueen)
-			{
-				symbol = 'Q';
-			}
-
-			fmt::print(style, "{} ", symbol);
+			fmt::print("0 ");
+			return;
 		}
-		fmt::print("\n");
-	}
+		auto symbol = 'P';
+		auto style = side == Sides::kBlack
+			? fg(fmt::color::orange_red) | fmt::emphasis::bold
+			: fg(fmt::color::light_yellow) | fmt::emphasis::bold;
+
+		if (type == Pieces::kQueen)
+		{
+			symbol = 'Q';
+		}
+
+		fmt::print(style, "{} ", symbol);
+
+		if (index % (checkers::constants::col_count_-1) == 0) fmt::print("\n");
+	});
 	fmt::print("\n   a b c d e f g h");
 }
 
@@ -62,7 +59,7 @@ bool BitboardManager::RemovePiece(size_t i) noexcept
 		return false;
 	}
 	auto board = GetBoard(side.value(), type.value());
-	board = core::utils::bits::ClearBit(board, i);
+	board.ClearBit(i);
 	SetBoard(side.value(), type.value(), board);
 	return true;
 }
@@ -85,30 +82,30 @@ std::expected<void, std::string> BitboardManager::MovePiece(size_t from, size_t 
 	}
 
 	auto board = GetBoard(side.value(), type.value());
-	board = core::utils::bits::ClearBit(board, from);
-	board = core::utils::bits::SetBit  (board, to  );
+	board.ClearBit(from);
+	board.SetBit  (to  );
 	SetBoard(side.value(), type.value(), board);
 
-	const auto row = to / checkers_constants::col_count_;
+	const auto row = to / checkers::constants::col_count_;
 
 	bool should_promote = type == Pieces::kPawn 
-		&& (side == Sides::kWhite && row == checkers_constants::row_count_ - 1) 
+		&& (side == Sides::kWhite && row == checkers::constants::row_count_ - 1) 
 		|| (side == Sides::kBlack && row == 0);
 
 	if (should_promote)
 	{
-		SetBoard(side.value(), type.value()  , core::utils::bits::ClearBit(GetBoard(side.value(), type.value())  , to));
-		SetBoard(side.value(), Pieces::kQueen, core::utils::bits::SetBit  (GetBoard(side.value(), Pieces::kQueen), to));
+		SetBoard(side.value(), type.value()  , GetBoard(side.value(), type.value()  ).ClearBit(to));
+		SetBoard(side.value(), Pieces::kQueen, GetBoard(side.value(), Pieces::kQueen).SetBit  (to));
 	}
 }
 
 std::optional<Sides> BitboardManager::GetSideByIndex(size_t i) const noexcept
 {
-	if (core::utils::bits::IsBitSet(white_bb_, i))
+	if (white_bb_.IsBitSet(i))
 	{
 		return Sides::kWhite;
 	}
-	if (core::utils::bits::IsBitSet(black_bb_, i))
+	if (black_bb_.IsBitSet(i))
 	{
 		return Sides::kBlack;
 	}
@@ -122,11 +119,11 @@ std::optional<Pieces> BitboardManager::GetPieceTypeByIndex(size_t i) const noexc
 	{
 		return {};
 	}
-	if (core::utils::bits::IsBitSet(GetBoard(side.value(), Pieces::kPawn), i))
+	if (GetBoard(side.value(), Pieces::kPawn).IsBitSet(i))
 	{
 		return Pieces::kPawn;
 	}
-	if (core::utils::bits::IsBitSet(GetBoard(side.value(), Pieces::kQueen), i))
+	if (GetBoard(side.value(), Pieces::kQueen).IsBitSet(i))
 	{
 		return Pieces::kQueen;
 	}
@@ -135,10 +132,10 @@ std::optional<Pieces> BitboardManager::GetPieceTypeByIndex(size_t i) const noexc
 
 bool BitboardManager::IsIndexOccupied(size_t i) const noexcept
 {
-	return core::utils::bits::IsBitSet(white_bb_, i) || core::utils::bits::IsBitSet(black_bb_, i);
+	return white_bb_.IsBitSet(i) || black_bb_.IsBitSet(i);
 }
 
-checkers_types::bitboard BitboardManager::GetBoard(Sides side, Pieces piece) const noexcept
+Bitboard BitboardManager::GetBoard(Sides side, Pieces piece) const noexcept
 {
 	if (side == Sides::kCount || piece == Pieces::kCount)
 	{
@@ -147,7 +144,7 @@ checkers_types::bitboard BitboardManager::GetBoard(Sides side, Pieces piece) con
 	return bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece));
 }
 
-checkers_types::bitboard BitboardManager::GetBoard(Sides side) const noexcept
+Bitboard BitboardManager::GetBoard(Sides side) const noexcept
 {
 	if (side == Sides::kCount)
 	{
@@ -156,7 +153,7 @@ checkers_types::bitboard BitboardManager::GetBoard(Sides side) const noexcept
 	return side == Sides::kWhite ? white_bb_ : black_bb_;
 }
 
-void BitboardManager::SetBoard(Sides side, Pieces piece, checkers_types::bitboard board) noexcept
+void BitboardManager::SetBoard(Sides side, Pieces piece, Bitboard board) noexcept
 {
 	if (side == Sides::kCount || piece == Pieces::kCount)
 	{
@@ -169,3 +166,5 @@ void BitboardManager::SetBoard(Sides side, Pieces piece, checkers_types::bitboar
 	bitboards_.at(static_cast<size_t>(side)).at(static_cast<size_t>(piece)) = board;
 	side_board |= board;
 }
+
+} // namespace checkers

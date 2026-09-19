@@ -4,12 +4,12 @@
 
 #include "Utils/CheckersUtils.h"
 
-void BoardIndicatorsRenderer::UpdateMoves(sf::Vector2f board_position, checkers_types::bitboard movements)
+void BoardIndicatorsRenderer::UpdateMoves(sf::Vector2f board_position, Bitboard movements)
 {
 	movement_indicator_graphics_ = UpdateArray(board_position, movements, sf::Color::Green);
 }
 
-void BoardIndicatorsRenderer::UpdateCaptures(sf::Vector2f board_position, checkers_types::bitboard captures)
+void BoardIndicatorsRenderer::UpdateCaptures(sf::Vector2f board_position, Bitboard captures)
 {
 	capture_indicator_graphics_ = UpdateArray(board_position, captures, sf::Color::Red);
 }
@@ -31,7 +31,7 @@ void BoardIndicatorsRenderer::draw(sf::RenderTarget& target, sf::RenderStates st
 	target.draw(capture_indicator_graphics_, states);
 }
 
-sf::VertexArray BoardIndicatorsRenderer::UpdateArray(sf::Vector2f board_position, checkers_types::bitboard bb, sf::Color color)
+sf::VertexArray BoardIndicatorsRenderer::UpdateArray(sf::Vector2f board_position, Bitboard bb, sf::Color color)
 {
 	sf::VertexArray result;
 	result.setPrimitiveType(sf::PrimitiveType::Triangles);
@@ -42,8 +42,8 @@ sf::VertexArray BoardIndicatorsRenderer::UpdateArray(sf::Vector2f board_position
 
 		const auto position = utils::checkers::BitboardIndexToPosition(index);
 
-		const auto offset = checkers_constants::cell_size_ / 4;
-		const auto size = checkers_constants::cell_size_ / 2;
+		const auto offset = checkers::constants::cell_size_ / 4;
+		const auto size = checkers::constants::cell_size_ / 2;
 
 		const auto top = position.y + offset + board_position.y;
 		const auto left = position.x + offset + board_position.x;

@@ -47,7 +47,7 @@ std::expected<void, std::string> CheckersInputManager::MoveSelectedIndexTo(Check
 	}
 }
 
-std::expected<checkers_types::bitboard, std::string> CheckersInputManager::GetMovementsForSelectedIndex(CheckersEngine& engine) noexcept
+std::expected<Bitboard, std::string> CheckersInputManager::GetMovementsForSelectedIndex(CheckersEngine& engine) noexcept
 {
 	if (!selected_index_)
 	{
@@ -61,7 +61,7 @@ std::expected<checkers_types::bitboard, std::string> CheckersInputManager::GetMo
 	return piece_moves.value();
 }
 
-checkers_types::bitboard CheckersInputManager::GetCaptures(CheckersEngine& engine) noexcept
+Bitboard CheckersInputManager::GetCaptures(CheckersEngine& engine) noexcept
 {	
 	return engine.GetCaptures();
 }

@@ -21,8 +21,8 @@ public:
 
 	std::expected<void, std::string> MoveSelectedIndexTo(CheckersEngine& engine, size_t target_index) noexcept;
 
-	std::expected<checkers_types::bitboard, std::string> GetMovementsForSelectedIndex(CheckersEngine& engine) noexcept;
-	checkers_types::bitboard GetCaptures(CheckersEngine& engine) noexcept;
+	std::expected<Bitboard, std::string> GetMovementsForSelectedIndex(CheckersEngine& engine) noexcept;
+	Bitboard GetCaptures(CheckersEngine& engine) noexcept;
 
 	std::expected<std::string, std::string> GetCommand(size_t target_index) noexcept;
 

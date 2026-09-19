@@ -4,61 +4,60 @@
 #include <bit>
 #include <cmath>
 
-#include "Core/Utils/BitUtils.h"
 #include "Core/Debugging/Logging.h"
 #include "Enums/Directions.h"
 #include "Enums/Sides.h"
 #include "Constants/CheckersConstants.h"
-#include "Utils/DirectionUtils.h"
-#include "Utils/CheckersUtils.h"
-#include "CheckersTypes.h"
+
+namespace checkers
+{
 
 MoveGenerator::MoveGenerator() noexcept
 {
 	CacheDiagonalRays();
 }
 
-checkers_types::bitboard MoveGenerator::GetMovementsForQueen(size_t i, checkers_types::bitboard enemies, checkers_types::bitboard allies) const noexcept
+Bitboard MoveGenerator::GetMovementsForQueen(size_t i, Bitboard enemies, Bitboard allies) const noexcept
 {
 	const auto blockers = enemies | allies;
-	checkers_types::bitboard attacks = 0;
-	for (const auto dir : utils::directions::kDiagonalDirections)
+	Bitboard attacks = 0;
+	for (const auto dir : kDiagonalDirections)
 	{
 		attacks |= GetMaskedRayMovements(dir, i, blockers);
 	}
 	return attacks;
 }
 
-checkers_types::bitboard MoveGenerator::GetCapturesForQueen(size_t i, checkers_types::bitboard enemies, checkers_types::bitboard allies) const noexcept
+Bitboard MoveGenerator::GetCapturesForQueen(size_t i, Bitboard enemies, Bitboard allies) const noexcept
 {
-	checkers_types::bitboard result = 0;
-	for (const auto dir : utils::directions::kDiagonalDirections)
+	Bitboard result = 0;
+	for (const auto dir : kDiagonalDirections)
 	{
 		result |= GetMaskedRayCaptures(dir, i, enemies, allies);
 	}
 	return result;
 }
 
-checkers_types::bitboard MoveGenerator::GetMovementsForPawn(size_t i, Sides side) noexcept
+Bitboard MoveGenerator::GetMovementsForPawn(size_t i, Sides side) noexcept
 {
-	if (utils::checkers::IsIndexOutOfBounds(i))
+	if (Bitboard::IsIndexOutOfBounds(i))
 	{
 		return {};
 	}
 	const auto pawn_bb = 0x1ull << i;
-	const auto pawn_east_excluded_bb = pawn_bb & ~(checkers_constants::file_h);
-	const auto pawn_west_excluded_bb = pawn_bb & ~(checkers_constants::file_a);
+	const auto pawn_east_excluded_bb = pawn_bb & ~(checkers::constants::file_h);
+	const auto pawn_west_excluded_bb = pawn_bb & ~(checkers::constants::file_a);
 
-	checkers_types::bitboard result = 0;
+	Bitboard result = 0;
 	result |= MovePawnForward(side, pawn_east_excluded_bb, side == Sides::kBlack ? 7 : 9);
 	result |= MovePawnForward(side, pawn_west_excluded_bb, side == Sides::kBlack ? 9 : 7);
 	return result;
 }
 
-checkers_types::bitboard MoveGenerator::GetCapturesForPawns(Sides side, checkers_types::bitboard allies, checkers_types::bitboard enemies, checkers_types::bitboard pawns) noexcept
+Bitboard MoveGenerator::GetCapturesForPawns(Sides side, Bitboard allies, Bitboard enemies, Bitboard pawns) noexcept
 {
-	const auto east_capable_pawns = (pawns & ~(checkers_constants::file_h | checkers_constants::file_g));
-	const auto west_capable_pawns = (pawns & ~(checkers_constants::file_a | checkers_constants::file_b));	
+	const auto east_capable_pawns = (pawns & ~(checkers::constants::file_h | checkers::constants::file_g));
+	const auto west_capable_pawns = (pawns & ~(checkers::constants::file_a | checkers::constants::file_b));	
 
 	const auto jumped_east = MovePawnForward(side, east_capable_pawns, side == Sides::kBlack ? 7 : 9) & enemies;
 	const auto jumped_west = MovePawnForward(side, west_capable_pawns, side == Sides::kBlack ? 9 : 7) & enemies;
@@ -71,7 +70,7 @@ checkers_types::bitboard MoveGenerator::GetCapturesForPawns(Sides side, checkers
 	return landed_east | landed_west;
 }
 
-checkers_types::bitboard MoveGenerator::GetCapturesForPawn(Sides side, checkers_types::bitboard allies, checkers_types::bitboard enemies, size_t i) noexcept
+Bitboard MoveGenerator::GetCapturesForPawn(Sides side, Bitboard allies, Bitboard enemies, size_t i) noexcept
 {
 	return GetCapturesForPawns(side, allies, enemies, 0x1ull << i);
 }
@@ -114,36 +113,36 @@ std::optional<size_t> MoveGenerator::GetEnemyIndexCapturedByPawn(size_t from, si
 	return enemy_i;
 }
 
-std::optional<size_t> MoveGenerator::GetEnemyIndexCapturedByQueen(size_t from, size_t to, VerticalDirections dir_y, checkers_types::bitboard enemies) const noexcept
+std::optional<size_t> MoveGenerator::GetEnemyIndexCapturedByQueen(size_t from, size_t to, VerticalDirections dir_y, Bitboard enemies) const noexcept
 {
 	const auto is_east = from % 8 < to % 8;
 
-	const auto dir = utils::directions::GetDiagonalDirection(is_east, dir_y == VerticalDirections::kUp);
+	const auto dir = GetDiagonalDirection(is_east, dir_y == VerticalDirections::kUp);
 	const auto blockers = diagonal_rays_[static_cast<int>(dir)][from] & enemies;
-	if (std::popcount(blockers) == 0)
+	if (std::popcount(blockers.bits_) == 0)
 	{
 		return {};
 	}
 	size_t enemy_i = {};
 	if (dir_y == VerticalDirections::kUp)
 	{
-		enemy_i = std::countr_zero(blockers);
+		enemy_i = std::countr_zero(blockers.bits_);
 	}
 	else
 	{
-		enemy_i = static_cast<size_t>(checkers_constants::total_squares_) - 1 - std::countl_zero(blockers);
+		enemy_i = static_cast<size_t>(checkers::constants::total_squares_) - 1 - std::countl_zero(blockers.bits_);
 	}
 	return enemy_i;
 }
 
-checkers_types::bitboard MoveGenerator::GetMaskedRayMovements(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept
+Bitboard MoveGenerator::GetMaskedRayMovements(DiagonalDirections dir, size_t i, Bitboard blockers) const noexcept
 {
 	const auto mask = CastRay(dir, i, blockers);
 	if (!mask.has_value())
 	{
 		return GetRay(dir, i);
 	}
-	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
+	const auto vertical_dir = GetVerticalDirection(dir);
 	auto first_blocker_index = GetFirstBlockerIndex(mask.value(), vertical_dir == VerticalDirections::kUp);
 
 	auto movements = GetRay(dir, i);
@@ -152,7 +151,7 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayMovements(DiagonalDirections
 	return movements;
 }
 
-checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections dir, size_t i, checkers_types::bitboard enemies, checkers_types::bitboard allies) const noexcept
+Bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections dir, size_t i, Bitboard enemies, Bitboard allies) const noexcept
 {
 	const auto blockers = enemies | allies;
 
@@ -162,22 +161,23 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections 
 	{
 		return {};
 	}
-	const auto vertical_dir = utils::directions::GetVerticalDirection(dir);
+	const auto vertical_dir = GetVerticalDirection(dir);
 
 	const auto first_blocker_index = GetFirstBlockerIndex(mask.value(), vertical_dir == VerticalDirections::kUp);
 
-	if (((0x1ull << first_blocker_index) & allies) != 0)
+	if ((Bitboard((0x1ull << first_blocker_index)) & allies) != 0)
 	{
 		return {};
 	}
 
 	// If there's only one blocker, return
-	if (std::popcount(mask.value()) == 1)
+	if (std::popcount(mask.value().bits_) == 1)
 	{
 		return GetRay(dir, first_blocker_index) & ~blockers;
 	}
 	
-	const auto mask_copy = core::utils::bits::ClearBit(mask.value(), first_blocker_index);
+	auto mask_copy = mask.value();
+	mask_copy.ClearBit(first_blocker_index);
 
 	// Get the second blocker	
 	const auto second_blocker_index = GetFirstBlockerIndex(mask_copy, vertical_dir == VerticalDirections::kUp);
@@ -189,19 +189,19 @@ checkers_types::bitboard MoveGenerator::GetMaskedRayCaptures(DiagonalDirections 
 	return captures & ~blockers;
 }
 
-checkers_types::bitboard MoveGenerator::MovePawnForward(Sides side, checkers_types::bitboard pawn, size_t shift) noexcept
+Bitboard MoveGenerator::MovePawnForward(Sides side, Bitboard pawn, size_t shift) noexcept
 {
 	return side == Sides::kBlack ? pawn >> shift : pawn << shift;
 }
 
-size_t MoveGenerator::GetFirstBlockerIndex(checkers_types::bitboard board, bool is_above) noexcept
+size_t MoveGenerator::GetFirstBlockerIndex(Bitboard board, bool is_above) noexcept
 {
 	return is_above
-		? std::countr_zero(board)
-		: static_cast<size_t>(checkers_constants::total_squares_ - 1) - std::countl_zero(board);
+		? std::countr_zero(board.bits_)
+		: static_cast<size_t>(checkers::constants::total_squares_ - 1) - std::countl_zero(board.bits_);
 }
 
-std::optional<checkers_types::bitboard> MoveGenerator::CastRay(DiagonalDirections dir, size_t i, checkers_types::bitboard blockers) const noexcept
+std::optional<Bitboard> MoveGenerator::CastRay(DiagonalDirections dir, size_t i, Bitboard blockers) const noexcept
 {
 	const auto rays = GetRay(dir, i);
 	if (blockers == 0)
@@ -216,34 +216,34 @@ std::optional<checkers_types::bitboard> MoveGenerator::CastRay(DiagonalDirection
 	return mask;
 }
 
-checkers_types::bitboard MoveGenerator::GetRay(DiagonalDirections dir, size_t i) const noexcept
+Bitboard MoveGenerator::GetRay(DiagonalDirections dir, size_t i) const noexcept
 {
 	return diagonal_rays_[static_cast<int>(dir)][i];
 }
 
 void MoveGenerator::CacheDiagonalRays() noexcept
 {
-	for (size_t i = 0; i < checkers_constants::total_squares_; ++i)
+	for (size_t i = 0; i < checkers::constants::total_squares_; ++i)
 	{
-		for (const auto dir : utils::directions::kDiagonalDirections)
+		for (const auto dir : kDiagonalDirections)
 		{
 			diagonal_rays_[static_cast<int>(dir)][i] |= GenerateDiagonalRays(dir, i);
 		}
 	}
 }
 
-checkers_types::bitboard MoveGenerator::GenerateDiagonalRays(DiagonalDirections dir, size_t index) noexcept
+Bitboard MoveGenerator::GenerateDiagonalRays(DiagonalDirections dir, size_t index) noexcept
 {
-	checkers_types::bitboard result = 0;
+	Bitboard result = 0;
 
-	auto file = index % checkers_constants::col_count_;
-	auto rank = index / checkers_constants::col_count_;
+	auto file = index % checkers::constants::col_count_;
+	auto rank = index / checkers::constants::col_count_;
 
 	while (true)
 	{
-		if (   (dir == DiagonalDirections::kNorthWest && (file <= 0 || rank >= checkers_constants::row_count_-1))
-			|| (dir == DiagonalDirections::kNorthEast && (rank >= checkers_constants::row_count_ -1 || file >= checkers_constants::col_count_-1))
-			|| (dir == DiagonalDirections::kSouthEast && (rank <= 0 || file >= checkers_constants::col_count_-1))
+		if (   (dir == DiagonalDirections::kNorthWest && (file <= 0 || rank >= checkers::constants::row_count_-1))
+			|| (dir == DiagonalDirections::kNorthEast && (rank >= checkers::constants::row_count_ -1 || file >= checkers::constants::col_count_-1))
+			|| (dir == DiagonalDirections::kSouthEast && (rank <= 0 || file >= checkers::constants::col_count_-1))
 			|| (dir == DiagonalDirections::kSouthWest && (rank <= 0 || file <= 0)))
 		{
 			break;
@@ -257,8 +257,10 @@ checkers_types::bitboard MoveGenerator::GenerateDiagonalRays(DiagonalDirections 
 			case DiagonalDirections::kSouthWest: file--; rank--; break;
 		}
 
-		const auto square = file + rank * checkers_constants::col_count_;
+		const auto square = file + rank * checkers::constants::col_count_;
 		result |= 0x1ull << square;		
 	}
 	return result;
 }
+
+} // namespace checkers

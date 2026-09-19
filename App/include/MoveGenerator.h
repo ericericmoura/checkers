@@ -10,7 +10,7 @@
 namespace checkers
 {
 
-using ray_list = std::array<std::array<Bitboard, checkers_constants::total_squares_>, static_cast<int>(DiagonalDirections::kCount)>;
+using ray_list = std::array<std::array<Bitboard, checkers::constants::total_squares_>, static_cast<int>(DiagonalDirections::kCount)>;
 
 class MoveGenerator
 {

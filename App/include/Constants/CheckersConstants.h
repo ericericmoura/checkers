@@ -5,7 +5,7 @@
 
 #include <SFML/System/Vector2.hpp>
 
-namespace checkers_constants
+namespace checkers::constants
 {
 
 constexpr int cell_size_ = 16;
@@ -22,4 +22,4 @@ constexpr uint64_t file_h = 0x8080808080808080;
 
 constexpr std::array<char, 8> files = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
 
-} // namespace checkers_constants
+} // namespace checkers::constants

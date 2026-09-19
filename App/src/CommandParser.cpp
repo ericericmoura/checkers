@@ -35,7 +35,7 @@ std::expected<size_t, std::string> GetIndexFromNotation(std::string_view notatio
 	const auto rank = static_cast<std::size_t>(notation.at(1) - '0' - 1);
 	const auto file = static_cast<std::size_t>(notation.at(0) - 'a');
 
-	size_t index = file + rank * checkers_constants::col_count_;
+	size_t index = file + rank * checkers::constants::col_count_;
 	if (utils::checkers::IsIndexOutOfBounds(index))
 	{
 		return std::unexpected("Invalid notation: coordinates out of bounds.");

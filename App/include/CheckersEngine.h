@@ -5,9 +5,12 @@
 #include <expected>
 
 #include "Enums/Sides.h"
-#include "CheckersTypes.h"
+#include "Types/Bitboard.h"
 #include "BitboardManager.h"
 #include "MoveGenerator.h"
+
+namespace checkers
+{
 
 enum class GameState
 {
@@ -20,20 +23,18 @@ enum class GameState
 class CheckersEngine
 {
 public:
-	checkers_types::bitboard GetBoard(Sides side, Pieces piece) const noexcept;
+	Bitboard GetBoard(Sides side, Pieces piece) const noexcept;
 	
 	void Print() const noexcept;
 
 	std::expected<GameState, std::string> MovePiece(size_t from, size_t to) noexcept;
 
-	std::expected<checkers_types::bitboard, std::string> GetMoves   (size_t at) const noexcept;
-	std::expected<checkers_types::bitboard, std::string> GetCaptures(size_t at) const noexcept;
+	std::expected<Bitboard, std::string> GetMoves   (size_t at) const noexcept;
+	std::expected<Bitboard, std::string> GetCaptures(size_t at) const noexcept;
 
-	checkers_types::bitboard GetCaptures() const noexcept;
+	Bitboard GetCaptures() const noexcept;
 
-	Sides GetEnemySide() const noexcept;
-	static Sides GetEnemySide(Sides side) noexcept;
-
+	Sides GetEnemySide  () const noexcept;
 	Sides GetCurrentTeam() const noexcept;
 
 	bool IsIndexOccupied(size_t i) const noexcept;
@@ -47,8 +48,8 @@ private:
 
 	Sides current_team_ = Sides::kWhite;
 
-	checkers_types::bitboard available_pawn_captures_ = 0;
-	checkers_types::bitboard available_queen_captures_ = 0;
+	Bitboard available_pawn_captures_ = 0;
+	Bitboard available_queen_captures_ = 0;
 
 	std::optional<size_t> last_played_piece_to_ = {};
 
@@ -59,3 +60,5 @@ private:
 
 	void UpdatePossibleCaptures(Sides side) noexcept;
 };
+
+} // namespace checkers

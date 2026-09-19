@@ -4,11 +4,13 @@
 #include <string>
 #include <expected>
 
-#include "CheckersTypes.h"
 #include "Enums/Pieces.h"
 #include "Enums/Sides.h"
 
 #include "Types/Bitboard.h"
+
+namespace checkers
+{
 
 using bitboard_list = std::array<std::array<Bitboard, static_cast<size_t>(Pieces::kCount)>, static_cast<size_t>(Sides::kCount)>;
 
@@ -27,14 +29,16 @@ public:
 
 	bool IsIndexOccupied(size_t i) const noexcept;
 
-	checkers_types::bitboard GetBoard(Sides side, Pieces piece) const noexcept;
-	checkers_types::bitboard GetBoard(Sides side) const noexcept;
+	Bitboard GetBoard(Sides side, Pieces piece) const noexcept;
+	Bitboard GetBoard(Sides side) const noexcept;
 
 private:
-	checkers_types::bitboard_list bitboards_{};
+	bitboard_list bitboards_{};
 
-	checkers_types::bitboard white_bb_{};
-	checkers_types::bitboard black_bb_{};
+	Bitboard white_bb_{};
+	Bitboard black_bb_{};
 
-	void SetBoard(Sides side, Pieces piece, checkers_types::bitboard board) noexcept;
+	void SetBoard(Sides side, Pieces piece, Bitboard board) noexcept;
 };
+
+} // namespace checkers

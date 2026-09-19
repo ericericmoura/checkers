@@ -8,32 +8,29 @@
 
 #include <fmt/base.h>
 
-#include "Core/Utils/BitUtils.h"
 #include "Enums/Sides.h"
 #include "Enums/Pieces.h"
 #include "Enums/Directions.h"
-#include "CheckersTypes.h"
+#include "Types/Bitboard.h"
 
-checkers_types::bitboard CheckersEngine::GetBoard(Sides side, Pieces piece) const noexcept
+namespace checkers
+{
+
+Bitboard CheckersEngine::GetBoard(Sides side, Pieces piece) const noexcept
 {
 	return bb_manager_.GetBoard(side, piece);
 }
 
 void CheckersEngine::Print() const noexcept
 {
-	const auto side_to_play = current_team_ == Sides::kWhite ? "White" : "Black";
+	const auto side_to_play = SideToString(current_team_);
 	fmt::print("\n\nIt's {}'s turn:", side_to_play);
 	bb_manager_.Print();
 }
 
 Sides CheckersEngine::GetEnemySide() const noexcept
 {
-	return GetEnemySide(current_team_);
-}
-
-Sides CheckersEngine::GetEnemySide(Sides side) noexcept
-{
-	return side == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
+	return GetOppositeSide(GetCurrentTeam());
 }
 
 Sides CheckersEngine::GetCurrentTeam() const noexcept
@@ -72,13 +69,13 @@ std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, siz
 	
 	const auto captures = available_pawn_captures_ | available_queen_captures_;
 
-	if (!core::utils::bits::IsBitSet(movements | captures, to))
+	if (!(movements | captures).IsBitSet(to))
 	{
 		return std::unexpected("Invalid move: unreachable or blocked square.");
 	}
 
 	const auto should_capture = captures != 0;
-	if (should_capture && !core::utils::bits::IsBitSet(captures, to))
+	if (should_capture && !captures.IsBitSet(to))
 	{
 		return std::unexpected("Invalid move: you are required to capture a piece.");
 	}
@@ -105,7 +102,7 @@ std::expected<GameState, std::string> CheckersEngine::MovePiece(size_t from, siz
 	return FinishTurn();
 }
 
-std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetMoves(size_t at) const noexcept
+std::expected<Bitboard, std::string> CheckersEngine::GetMoves(size_t at) const noexcept
 {
 	if (!bb_manager_.IsIndexOccupied(at))
 	{
@@ -117,7 +114,7 @@ std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetMoves(si
 	{
 		return std::unexpected("Invalid index: there's no piece at the specified square.");
 	}
-	const auto enemy_side = GetEnemySide(side.value());
+	const auto enemy_side = GetOppositeSide(side.value());
 
 	const auto moves = bb_manager_.GetPieceTypeByIndex(at) == Pieces::kPawn
 		? move_generator_.GetMovementsForPawn (at, side.value())
@@ -126,7 +123,7 @@ std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetMoves(si
 	return moves;
 }
 
-std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetCaptures(size_t at) const noexcept
+std::expected<Bitboard, std::string> CheckersEngine::GetCaptures(size_t at) const noexcept
 {
 	if (!bb_manager_.IsIndexOccupied(at))
 	{
@@ -138,7 +135,7 @@ std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetCaptures
 	{
 		return std::unexpected("Invalid index: there's no piece at the specified square.");
 	}
-	const auto enemy_side = GetEnemySide(side.value());
+	const auto enemy_side = GetOppositeSide(side.value());
 
 	const auto allies  = bb_manager_.GetBoard(side.value());
 	const auto enemies = bb_manager_.GetBoard(enemy_side  );
@@ -150,7 +147,7 @@ std::expected<checkers_types::bitboard, std::string> CheckersEngine::GetCaptures
 	return captures;
 }
 
-checkers_types::bitboard CheckersEngine::GetCaptures() const noexcept
+Bitboard CheckersEngine::GetCaptures() const noexcept
 {
 	return available_pawn_captures_ | available_queen_captures_;
 }
@@ -193,7 +190,7 @@ bool CheckersEngine::CheckForCombos() const noexcept
 	const auto allies  = bb_manager_.GetBoard(current_team_);
 	const auto enemies = bb_manager_.GetBoard(GetEnemySide());
 	
-	checkers_types::bitboard captures = type == Pieces::kPawn
+	Bitboard captures = type == Pieces::kPawn
 		? move_generator_.GetCapturesForPawn(current_team_, allies, enemies, last_played_piece_to_.value())
 		: move_generator_.GetCapturesForQueen(last_played_piece_to_.value(), enemies, allies);
 
@@ -207,7 +204,7 @@ std::expected<void, std::string> CheckersEngine::CapturePiece(size_t from, size_
 
 	const auto captures = piece_type == Pieces::kPawn ? available_pawn_captures_ : available_queen_captures_;
 
-	if (!core::utils::bits::IsBitSet(captures, to))
+	if (!captures.IsBitSet(to))
 	{
 		return std::unexpected("Invalid capture: there's no available capture at that square.");
 	}
@@ -235,24 +232,22 @@ void CheckersEngine::UpdatePossibleCaptures(Sides side) noexcept
 	available_pawn_captures_  = 0;
 	available_queen_captures_ = 0;
 
-	const auto enemies = bb_manager_.GetBoard(GetEnemySide(side));
+	const auto enemies = bb_manager_.GetBoard(GetOppositeSide(side));
+	const auto allies  = bb_manager_.GetBoard(GetOppositeSide(side));
 
-	auto allies = bb_manager_.GetBoard(side);
-	while (std::popcount(allies) != 0)
-	{
-		const auto i = std::countr_zero(allies);
-		allies = core::utils::bits::ClearBit(allies, i);
-
+	allies.ForEachBitSet([this, &allies, &enemies, &side](size_t i) {
 		const auto type = bb_manager_.GetPieceTypeByIndex(i);
 		assert(type.has_value());
 
 		if (type.value() == Pieces::kPawn)
 		{
-			available_pawn_captures_  |= move_generator_.GetCapturesForPawn (side, allies, enemies, i);
+			available_pawn_captures_ |= move_generator_.GetCapturesForPawn(side, allies, enemies, i);
 		}
 		else
 		{
 			available_queen_captures_ |= move_generator_.GetCapturesForQueen(i, enemies, allies);
 		}
-	}
+	});
 }
+
+} // namespace checkers

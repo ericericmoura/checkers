@@ -1,10 +1,8 @@
-#include "Utils/DirectionUtils.h"
+#include "Enums/Directions.h"
 
 #include <cassert>
 
-#include "Enums/Directions.h"
-
-DiagonalDirections utils::directions::GetOpositeDirection(DiagonalDirections dir) noexcept
+checkers::DiagonalDirections checkers::GetOppositeDirection(DiagonalDirections dir) noexcept
 {
     assert(dir != DiagonalDirections::kCount);
     if (dir == DiagonalDirections::kNorthEast)
@@ -22,7 +20,7 @@ DiagonalDirections utils::directions::GetOpositeDirection(DiagonalDirections dir
     return DiagonalDirections::kNorthEast;
 }
 
-VerticalDirections utils::directions::GetVerticalDirection(DiagonalDirections dir) noexcept
+checkers::VerticalDirections checkers::GetVerticalDirection(DiagonalDirections dir) noexcept
 {
     if (dir == DiagonalDirections::kNorthEast || dir == DiagonalDirections::kNorthWest)
     {
@@ -31,7 +29,7 @@ VerticalDirections utils::directions::GetVerticalDirection(DiagonalDirections di
     return VerticalDirections::kDown;
 }
 
-DiagonalDirections utils::directions::GetDiagonalDirection(bool is_east, bool is_up) noexcept
+checkers::DiagonalDirections checkers::GetDiagonalDirection(bool is_east, bool is_up) noexcept
 {
     if (is_east && is_up)
     {

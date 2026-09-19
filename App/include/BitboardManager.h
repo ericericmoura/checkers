@@ -8,6 +8,10 @@
 #include "Enums/Pieces.h"
 #include "Enums/Sides.h"
 
+#include "Types/Bitboard.h"
+
+using bitboard_list = std::array<std::array<Bitboard, static_cast<size_t>(Pieces::kCount)>, static_cast<size_t>(Sides::kCount)>;
+
 class BitboardManager
 {
 public:

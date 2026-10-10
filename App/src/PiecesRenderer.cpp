@@ -10,7 +10,7 @@
 #include "BitboardPositionMapping.h"
 #include "BoardNotation.h"
 
-namespace checkers
+namespace checkers::rendering
 {
 
 PiecesRenderer::PiecesRenderer()
@@ -77,4 +77,4 @@ void PiecesRenderer::AppendPieces(sf::Vector2f board_position, Bitboard white_bb
 	}
 }
 
-}
+} // namespace checkers::rendering

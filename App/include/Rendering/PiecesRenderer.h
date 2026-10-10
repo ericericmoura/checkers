@@ -8,7 +8,7 @@
 
 #include "Types/Bitboard.h"
 
-namespace checkers
+namespace checkers::rendering
 {
 
 class PiecesRenderer : public sf::Transformable, public sf::Drawable
@@ -39,4 +39,4 @@ private:
 	);
 };
 
-} // namespace checkers
+} // namespace checkers::rendering

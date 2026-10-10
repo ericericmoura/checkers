@@ -7,7 +7,7 @@
 #include "Core/BitmapStore.h"
 #include "Constants/ResourcesConstants.h"
 
-namespace checkers
+namespace checkers::rendering
 {
 
 BoardRenderer::BoardRenderer()
@@ -25,4 +25,4 @@ void BoardRenderer::draw(sf::RenderTarget& target, sf::RenderStates states) cons
 	target.draw(board_sprite_);
 }
 
-} // namespace checkers
+} // namespace checkers::rendering

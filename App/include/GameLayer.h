@@ -30,12 +30,12 @@ private:
 
 	sf::View   camera_;
 
-	CheckersInputManager checkers_input_manager_{};
+	interaction::CheckersInputManager checkers_input_manager_{};
 
-	BoardIndicatorsRenderer board_indicators_renderer_{};
+	rendering::BoardIndicatorsRenderer board_indicators_renderer_{};
 
-	BoardRenderer  board_renderer_ {};
-	PiecesRenderer pieces_renderer_{};
+	rendering::BoardRenderer  board_renderer_ {};
+	rendering::PiecesRenderer pieces_renderer_{};
 
 	CheckersEngine checkers_engine_{};
 

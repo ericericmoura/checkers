@@ -6,10 +6,13 @@
 #include <SFML/Window/Keyboard.hpp>
 
 #include "Core/Layer.h"
-#include "COre/FontStore.h"
+#include "Core/FontStore.h"
 #include "Core/Debugging/Logging.h"
-#include "GameLayer.h"
 #include "Constants/ResourcesConstants.h"
+#include "GameLayer.h"
+
+namespace checkers
+{
 
 MainMenuLayer::MainMenuLayer(unsigned int id) noexcept
 	: Layer(id)
@@ -44,3 +47,5 @@ void MainMenuLayer::draw(sf::RenderTarget& target, sf::RenderStates states) cons
 	target.draw(background_ , states);
 	target.draw(title_text_, states);
 }
+
+} // namespace checkers

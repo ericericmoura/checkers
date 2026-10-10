@@ -12,7 +12,7 @@
 #include "GameHudLayer.h"
 #include "MainMenuLayer.h"
 #include "Rendering/BoardRenderer.h"
-#include "Utils/CheckersUtils.h"
+#include "BitboardPositionMapping.h"
 
 namespace checkers
 {
@@ -20,7 +20,7 @@ namespace checkers
 GameLayer::GameLayer(unsigned int id) noexcept
 	: Layer(id)
 {
-	auto camera_size = BoardRenderer::GetBoardSize();
+	auto camera_size = rendering::BoardRenderer::GetBoardSize();
 
 	auto display_size = core::Engine::Get().GetCurrentDisplaySize();
 
@@ -33,7 +33,7 @@ GameLayer::GameLayer(unsigned int id) noexcept
 	camera_.zoom(1.1f);
 
 	pieces_renderer_.Update(
-		BoardRenderer::GetBoardSize(),
+		rendering::BoardRenderer::GetBoardSize(),
 		board_renderer_.getPosition(),
 		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kPawn),
 		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kQueen),
@@ -64,7 +64,7 @@ void GameLayer::HandleEvent(sf::Event event)
 			hud_.HideErrorText();
 
 			const auto world_pos = core::Engine::Get().GetWindow().mapPixelToCoords(mouse_event->position, camera_);
-			const auto board_index = utils::checkers::PositionToBitboardIndex(world_pos);
+			const auto board_index = position_mapping::WorldPositionToBitboardIndex(world_pos);
 			if (!checkers_input_manager_.IsIndexSelected())
 			{
 				if (!checkers_engine_.IsIndexOccupied(board_index))
@@ -101,7 +101,7 @@ void GameLayer::HandleEvent(sf::Event event)
 			// UPDATE CAPTURES
 			board_indicators_renderer_.ClearCaptures();
 			const auto captures = checkers_input_manager_.GetCaptures(checkers_engine_);
-			if (captures > 0)
+			if (captures.bits_ > 0)
 			{
 				board_indicators_renderer_.UpdateCaptures(
 					board_renderer_.getPosition(),
@@ -117,7 +117,7 @@ void GameLayer::HandleEvent(sf::Event event)
 				return;
 			}
 			pieces_renderer_.Update(
-				BoardRenderer::GetBoardSize(),
+				rendering::BoardRenderer::GetBoardSize(),
 				board_renderer_.getPosition(),
 				checkers_engine_.GetBoard(Sides::kWhite, Pieces::kPawn),
 				checkers_engine_.GetBoard(Sides::kWhite, Pieces::kQueen),

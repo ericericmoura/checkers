@@ -70,6 +70,7 @@ struct Bitboard
 	{
 		size_t index = std::countr_zero(bits_);
 		ClearBit(index);
+		return index;
 	}
 
 	Bitboard SetBit(size_t index) noexcept

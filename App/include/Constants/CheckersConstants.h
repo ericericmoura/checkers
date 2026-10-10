@@ -22,9 +22,9 @@ constexpr uint64_t file_h = 0x8080808080808080;
 
 constexpr std::array<char, 8> files = { 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' };
 
-bool IsIndexOutOfBounds(size_t index)
+constexpr bool IsIndexOutOfBounds(size_t index)
 {
-	return index < 0 || index >= total_squares_;
+	return index >= total_squares_;
 }
 
 } // namespace checkers::constants

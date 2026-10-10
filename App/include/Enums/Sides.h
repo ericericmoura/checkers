@@ -17,7 +17,7 @@ constexpr Sides GetOppositeSide(Sides side) noexcept
 	return side == Sides::kWhite ? Sides::kBlack : Sides::kWhite;
 }
 
-std::string SideToString(Sides side) noexcept
+constexpr std::string SideToString(Sides side) noexcept
 {
 	return side == Sides::kWhite ? "white" : "black";
 }

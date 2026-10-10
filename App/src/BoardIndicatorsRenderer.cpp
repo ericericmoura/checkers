@@ -2,7 +2,10 @@
 
 #include <bit>
 
-#include "Utils/CheckersUtils.h"
+#include "BitboardPositionMapping.h"
+
+namespace checkers::rendering
+{
 
 void BoardIndicatorsRenderer::UpdateMoves(sf::Vector2f board_position, Bitboard movements)
 {
@@ -37,10 +40,10 @@ sf::VertexArray BoardIndicatorsRenderer::UpdateArray(sf::Vector2f board_position
 	result.setPrimitiveType(sf::PrimitiveType::Triangles);
 	while (bb != 0)
 	{
-		const auto index = std::countr_zero(bb);
+		const auto index = std::countr_zero(bb.bits_);
 		bb &= ~(0x1ull << index);
 
-		const auto position = utils::checkers::BitboardIndexToPosition(index);
+		const auto position = checkers::position_mapping::BitboardIndexToWorldPosition(index);
 
 		const auto offset = checkers::constants::cell_size_ / 4;
 		const auto size = checkers::constants::cell_size_ / 2;
@@ -60,3 +63,5 @@ sf::VertexArray BoardIndicatorsRenderer::UpdateArray(sf::Vector2f board_position
 	}
 	return result;
 }
+
+} // namespace checkers::rendering

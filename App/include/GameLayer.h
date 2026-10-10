@@ -13,6 +13,9 @@
 #include "CheckersInputManager.h"
 #include "CheckersHUD.h"
 
+namespace checkers
+{
+
 class GameLayer : public core::Layer
 {
 public:
@@ -38,3 +41,5 @@ private:
 
 	CheckersHUD hud_{};
 };
+
+} // namespace checkers

@@ -7,13 +7,13 @@
 
 #include "Core/Utils/StringUtils.h"
 #include "Core/Debugging/Logging.h"
-#include "Utils/CheckersUtils.h"
+#include "Debugging/BitboardLogging.h"
 #include "CheckersEngine.h"
 #include "CommandParser.h"
 
 int main()
 {
-	CheckersEngine engine{};
+	checkers::CheckersEngine engine{};
 
 	std::string input{};
 	while (true)
@@ -35,11 +35,11 @@ int main()
 			return 0;
 		}
 
-		command_parser::ParseCommand(input)
+		checkers::command_parser::ParseCommand(input)
 			.transform(
 				[&engine](const auto& command)
 				{
-					if (auto value = std::get_if<CommandMove>(&command))
+					if (auto value = std::get_if<checkers::CommandMove>(&command))
 					{
 						const auto result = engine.MovePiece(value->move_from_, value->move_to_);
 						if (!result)
@@ -48,7 +48,7 @@ int main()
 						}
 						return;
 					}
-					if (auto value = std::get_if<CommandDisplayMoves>(&command))
+					if (auto value = std::get_if<checkers::CommandDisplayMoves>(&command))
 					{
 						const auto piece_moves = engine.GetMoves(value->piece_index_);
 						if (!piece_moves)
@@ -57,10 +57,10 @@ int main()
 							return;
 						}
 						fmt::print("\nMoves for piece at index {}:", value->piece_index_);
-						utils::checkers::LogBitboardWithContrast(piece_moves.value(), 'M');
+						checkers::debugging::LogBitboardWithContrast(piece_moves.value(), 'M');
 						return;
 					}
-					if (auto value = std::get_if<CommandDisplayCaptures>(&command))
+					if (auto value = std::get_if<checkers::CommandDisplayCaptures>(&command))
 					{
 						const auto piece_captures = engine.GetCaptures(value->piece_index_);
 						if (!piece_captures)
@@ -69,7 +69,7 @@ int main()
 							return;
 						}
 						fmt::print("\nCaptures for piece at index {}:", value->piece_index_);
-						utils::checkers::LogBitboardWithContrast(piece_captures.value(), 'C');
+						checkers::debugging::LogBitboardWithContrast(piece_captures.value(), 'C');
 						return;
 					}
 					core::debugging::LogError("Invalid command: not found.");

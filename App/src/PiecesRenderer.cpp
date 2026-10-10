@@ -4,9 +4,14 @@
 #include <cassert>
 
 #include "Core/BitmapStore.h"
+#include "Core/Debugging/Logging.h"
 #include "Constants/CheckersConstants.h"
 #include "Constants/ResourcesConstants.h"
-#include "Utils/CheckersUtils.h"
+#include "BitboardPositionMapping.h"
+#include "BoardNotation.h"
+
+namespace checkers
+{
 
 PiecesRenderer::PiecesRenderer()
 {
@@ -43,15 +48,15 @@ void PiecesRenderer::AppendPieces(sf::Vector2f board_position, Bitboard white_bb
 
 	while (all_pieces != 0)
 	{
-		const auto index = std::countr_zero(all_pieces);
+		const auto index = std::countr_zero(all_pieces.bits_);
 		all_pieces &= ~(0x1ull << index);
 
-		const auto piece_position = utils::checkers::BitboardIndexToPosition(index);
+		const auto piece_position = position_mapping::BitboardIndexToWorldPosition(index);
 
-		const auto top = piece_position.y;
+		const auto top  = piece_position.y;
 		const auto left = piece_position.x;
 		const auto bottom = top + checkers::constants::cell_size_;
-		const auto right = left + checkers::constants::cell_size_;
+		const auto right  = left + checkers::constants::cell_size_;
 
 		const auto is_white = (white_bb & (0x1ull << index)) != 0;
 
@@ -70,4 +75,6 @@ void PiecesRenderer::AppendPieces(sf::Vector2f board_position, Bitboard white_bb
 		graphics_.append(sf::Vertex(sf::Vector2f(right, bottom), sf::Color::White, sf::Vector2f(tx_right, tx_bottom )));
 		graphics_.append(sf::Vertex(sf::Vector2f(left , bottom), sf::Color::White, sf::Vector2f(tx_left , tx_bottom )));
 	}
+}
+
 }

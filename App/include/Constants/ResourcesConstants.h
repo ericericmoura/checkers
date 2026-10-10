@@ -5,6 +5,9 @@
 #define FONTS_PATH    RESOURCES_PATH "fonts/"
 #define TEXTURES_PATH RESOURCES_PATH "textures/"
 
+namespace checkers
+{
+
 namespace resources_constants
 {
 
@@ -17,3 +20,5 @@ constexpr std::string_view checkers_pieces_texture_key_ = TEXTURES_PATH "pieces_
 constexpr std::string_view window_icon_texture_key_     = TEXTURES_PATH "icon.png";
 
 } // namespace resources_constants
+
+} // namespace checkers

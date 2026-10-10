@@ -12,6 +12,9 @@
 #include "MainMenuLayer.h"
 #include "Constants/ResourcesConstants.h"
 
+namespace checkers
+{
+
 GameHudLayer::GameHudLayer(unsigned int id) noexcept
 	: Layer(id)
 	, paused_text_(*core::FontStore::Get().GetFont(resources_constants::pixel_font_key_.data()))
@@ -51,3 +54,5 @@ void GameHudLayer::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	target.draw(background_ , states);
 	target.draw(paused_text_, states);
 }
+
+} // namespace checkers

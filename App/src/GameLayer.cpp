@@ -14,6 +14,9 @@
 #include "Rendering/BoardRenderer.h"
 #include "Utils/CheckersUtils.h"
 
+namespace checkers
+{
+
 GameLayer::GameLayer(unsigned int id) noexcept
 	: Layer(id)
 {
@@ -141,3 +144,5 @@ void GameLayer::draw(sf::RenderTarget & target, sf::RenderStates states) const
 	target.draw(board_indicators_renderer_, states);
 	target.draw(hud_, states);
 }
+
+} // namespace checkers

@@ -4,6 +4,9 @@
 #include "Core/Engine.h"
 #include "Constants/ResourcesConstants.h"
 
+namespace checkers
+{
+
 CheckersHUD::CheckersHUD() 
 	: error_text_       (*core::FontStore::Get().GetFont(resources_constants::pixel_font_key_.data()))
 	, current_team_text_(*core::FontStore::Get().GetFont(resources_constants::pixel_font_key_.data()))
@@ -46,3 +49,5 @@ void CheckersHUD::draw(sf::RenderTarget& target, sf::RenderStates states) const
 	target.draw(current_team_text_, states);
 	target.draw(error_text_, states);
 }
+
+} // namespace checkers

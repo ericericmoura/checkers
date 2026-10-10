@@ -7,6 +7,9 @@
 
 #include "CheckersEngine.h"
 
+namespace checkers
+{
+
 struct CommandMove 
 {
 	static constexpr std::string_view kKey = "move";
@@ -47,8 +50,8 @@ using Command = std::variant<CommandMove, CommandRedo, CommandUndo, CommandDispl
 namespace command_parser
 {
 
-std::expected<void, std::string> RunCommand(CheckersEngine& engine, std::string cmd) noexcept;
-
 std::expected<Command, std::string> ParseCommand(std::string_view command) noexcept;
 
-} // namespace CommandParser
+} // namespace command_parser
+
+} // namespace checkers

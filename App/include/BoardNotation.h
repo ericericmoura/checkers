@@ -1,5 +1,6 @@
 
 #include <expected>
+#include <string>
 
 #include "Constants/CheckersConstants.h"
 
@@ -8,7 +9,7 @@ namespace checkers
 
 static std::expected<std::string, std::string> BitboardIndexToNotation(size_t index)
 {
-	if (IsIndexOutOfBounds(index))
+	if (constants::IsIndexOutOfBounds(index))
 	{
 		return std::unexpected("Invalid bitboard index: out of bounds.");
 	}

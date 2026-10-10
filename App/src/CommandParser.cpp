@@ -9,8 +9,10 @@
 #include "Core/Utils/StringUtils.h"
 #include "Core/Debugging/Logging.h"
 #include "Constants/CheckersConstants.h"
-#include "Utils/CheckersUtils.h"
 #include "CheckersEngine.h"
+
+namespace checkers 
+{
 
 namespace
 {
@@ -36,7 +38,7 @@ std::expected<size_t, std::string> GetIndexFromNotation(std::string_view notatio
 	const auto file = static_cast<std::size_t>(notation.at(0) - 'a');
 
 	size_t index = file + rank * checkers::constants::col_count_;
-	if (utils::checkers::IsIndexOutOfBounds(index))
+	if (constants::IsIndexOutOfBounds(index))
 	{
 		return std::unexpected("Invalid notation: coordinates out of bounds.");
 	}
@@ -130,3 +132,5 @@ std::expected<Command, std::string> command_parser::ParseCommand(std::string_vie
 	}
 	return std::unexpected("Non-existent command.");
 }
+
+} // namespace checkers

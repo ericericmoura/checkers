@@ -8,6 +8,9 @@
 
 #include "Core/Layer.h"
 
+namespace checkers
+{
+
 class MainMenuLayer : public core::Layer
 {
 public:
@@ -23,3 +26,5 @@ private:
 
 	sf::Text title_text_;
 };
+
+} // namespace checkers

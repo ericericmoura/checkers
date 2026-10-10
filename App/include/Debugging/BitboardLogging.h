@@ -6,7 +6,6 @@
 #include <fmt/base.h>
 #include <fmt/color.h>
 
-#include "CheckersTypes.h"
 #include "Types/Bitboard.h"
 
 namespace checkers::debugging

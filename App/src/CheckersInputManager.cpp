@@ -7,9 +7,12 @@
 
 #include "Rendering/PiecesRenderer.h"
 #include "Rendering/BoardRenderer.h"
-#include "Utils/CheckersUtils.h"
 #include "Core/Debugging/Logging.h"
 #include "CheckersEngine.h"
+#include "BoardNotation.h"
+
+namespace checkers::interaction
+{
 
 void CheckersInputManager::SelectIndex(size_t index) noexcept
 {
@@ -40,7 +43,7 @@ std::expected<void, std::string> CheckersInputManager::MoveSelectedIndexTo(Check
 
 	core::debugging::LogInfo("Moving piece from {} to {}", selected_index_.value(), target_index);
 
-	const auto result = engine.MovePiece(selected_index_.value(), target_index);	
+	const auto result = engine.MovePiece(selected_index_.value(), target_index);
 	if (!result)
 	{
 		return std::unexpected(result.error());
@@ -62,7 +65,7 @@ std::expected<Bitboard, std::string> CheckersInputManager::GetMovementsForSelect
 }
 
 Bitboard CheckersInputManager::GetCaptures(CheckersEngine& engine) noexcept
-{	
+{
 	return engine.GetCaptures();
 }
 
@@ -73,9 +76,8 @@ std::expected<std::string, std::string> CheckersInputManager::GetCommand(size_t 
 		return std::unexpected("Incomplete command, either selected or target index are not set.");
 	}
 
-	const auto index_notation  = utils::checkers::BitboardIndexToNotation(selected_index_.value());
-	const auto target_notation = utils::checkers::BitboardIndexToNotation(target_index);
-
+	const auto index_notation = BitboardIndexToNotation(selected_index_.value());
+	const auto target_notation = BitboardIndexToNotation(target_index);
 
 	if (!index_notation || !target_notation)
 	{
@@ -88,3 +90,5 @@ std::expected<std::string, std::string> CheckersInputManager::GetCommand(size_t 
 
 	return command;
 }
+
+} // namespace checkers::interaction

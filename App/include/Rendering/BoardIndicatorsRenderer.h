@@ -6,7 +6,10 @@
 #include <SFML/Graphics/RenderStates.hpp>
 #include <SFML/Graphics/VertexArray.hpp>
 
-#include "CheckersTypes.h"
+#include "Types/Bitboard.h"
+
+namespace checkers::rendering
+{
 
 class BoardIndicatorsRenderer : public sf::Transformable, public sf::Drawable
 {
@@ -37,3 +40,4 @@ private:
 	);
 };
 
+} // namespace checkers::rendering

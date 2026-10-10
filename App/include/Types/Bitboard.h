@@ -25,11 +25,11 @@ struct Bitboard
 	requires std::invocable<Fn, size_t>
 	void ForEachBitSet(Fn&& lambda) const
 	{
-		const bits = bits_;
-		while (bits != 0)
+		auto bb = Bitboard(bits_);
+		while (bb != 0)
 		{
-			size_t index = std::countr_zero(bits);
-			ClearBit(index);
+			size_t index = std::countr_zero(bb.bits_);
+			bb.ClearBit(index);
 
 			lambda(index);
 		}
@@ -39,7 +39,7 @@ struct Bitboard
 	requires std::invocable<Fn, size_t>
 	void DrainBits(Fn&& lambda)
 	{
-		while (bits != 0)
+		while (bits_ != 0)
 		{
 			size_t index = PopLowerBit();
 			lambda(index);

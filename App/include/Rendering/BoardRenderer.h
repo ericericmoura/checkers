@@ -7,6 +7,9 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/System/Vector2.hpp>
 
+namespace checkers
+{
+
 class BoardRenderer : public sf::Transformable, public sf::Drawable
 {
 public:
@@ -20,3 +23,5 @@ public:
 private:
 	sf::Sprite board_sprite_;
 };
+
+} // namespace checkers

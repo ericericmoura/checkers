@@ -3,7 +3,7 @@
 #include <string>
 #include <expected>
 
-#include "CheckersTypes.h"
+#include <SFML/System/Vector2.hpp>
 
 namespace checkers::position_mapping
 {

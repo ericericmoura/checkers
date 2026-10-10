@@ -7,6 +7,9 @@
 #include "Core/BitmapStore.h"
 #include "Constants/ResourcesConstants.h"
 
+namespace checkers
+{
+
 BoardRenderer::BoardRenderer()
 	: board_sprite_(*core::BitmapStore::Get().GetTexture(resources_constants::checkers_board_texture_key_.data()))
 {}
@@ -21,3 +24,5 @@ void BoardRenderer::draw(sf::RenderTarget& target, sf::RenderStates states) cons
 	states.transform *= getTransform();
 	target.draw(board_sprite_);
 }
+
+} // namespace checkers

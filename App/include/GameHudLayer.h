@@ -9,6 +9,9 @@
 
 #include "Core/Layer.h"
 
+namespace checkers
+{
+
 class GameHudLayer : public core::Layer
 {
 public:
@@ -26,3 +29,5 @@ private:
 	float invincibility_delay_ = 0.3f;
 	sf::Time created_at_{};
 };
+
+} // namespace checkers

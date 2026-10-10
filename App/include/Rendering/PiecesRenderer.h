@@ -6,7 +6,10 @@
 #include <SFML/Graphics/RenderTarget.hpp>
 #include <SFML/Graphics/RenderStates.hpp>
 
-#include "CheckersTypes.h"
+#include "Types/Bitboard.h"
+
+namespace checkers
+{
 
 class PiecesRenderer : public sf::Transformable, public sf::Drawable
 {
@@ -35,3 +38,5 @@ private:
 		size_t black_texture_index
 	);
 };
+
+} // namespace checkers

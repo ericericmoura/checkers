@@ -10,6 +10,9 @@
 
 #include "Enums/Sides.h"
 
+namespace checkers
+{
+
 class CheckersHUD : public sf::Transformable, public sf::Drawable
 {
 public:
@@ -29,3 +32,5 @@ private:
 
 	sf::View hud_camera_;
 };
+
+} // namespace checkers

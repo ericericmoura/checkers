@@ -10,12 +10,21 @@
 #include "Core/Debugging/Logging.h"
 #include "CheckersEngine.h"
 #include "BoardNotation.h"
+#include "Core/Engine.h"
 
 namespace checkers::interaction
 {
 
-void CheckersInputManager::SelectIndex(size_t index) noexcept
+std::expected<void, std::string> CheckersInputManager::SelectIndex(size_t index, bool is_occupied) noexcept
 {
+	if (IsIndexSelected())
+	{
+		return std::unexpected("Invalid selection: an index is already selected.");
+	}
+	if (!is_occupied)
+	{		
+		return std::unexpected("Invalid selection: there's no piece at index " + std::to_string(index) + ".");
+	}
 	selected_index_ = index;
 }
 
@@ -62,11 +71,6 @@ std::expected<Bitboard, std::string> CheckersInputManager::GetMovementsForSelect
 		return std::unexpected(piece_moves.error());
 	}
 	return piece_moves.value();
-}
-
-Bitboard CheckersInputManager::GetCaptures(CheckersEngine& engine) noexcept
-{
-	return engine.GetCaptures();
 }
 
 std::expected<std::string, std::string> CheckersInputManager::GetCommand(size_t target_index) noexcept

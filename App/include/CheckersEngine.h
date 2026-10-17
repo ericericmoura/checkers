@@ -23,7 +23,7 @@ enum class GameState
 class CheckersEngine
 {
 public:
-	Bitboard GetBoard(Sides side, Pieces piece) const noexcept;
+	Bitboard GetBoard(Sides side, Pieces piece) const noexcept;	
 	
 	void Print() const noexcept;
 
@@ -31,6 +31,8 @@ public:
 
 	std::expected<Bitboard, std::string> GetMoves   (size_t at) const noexcept;
 	std::expected<Bitboard, std::string> GetCaptures(size_t at) const noexcept;
+
+	std::optional<Sides> GetSideByIndex(size_t at);
 
 	Bitboard GetCaptures() const noexcept;
 

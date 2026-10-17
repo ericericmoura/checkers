@@ -22,7 +22,7 @@ namespace interaction
 class CheckersInputManager
 {
 public:
-	void SelectIndex(size_t index) noexcept;
+	std::expected<void, std::string> SelectIndex(size_t index, bool is_occupied = true) noexcept;
 
 	void DeselectIndex() noexcept;
 	bool IsIndexSelected() const noexcept;
@@ -32,7 +32,6 @@ public:
 	std::expected<void, std::string> MoveSelectedIndexTo(CheckersEngine& engine, size_t target_index) noexcept;
 
 	std::expected<Bitboard, std::string> GetMovementsForSelectedIndex(CheckersEngine& engine) noexcept;
-	Bitboard GetCaptures(CheckersEngine& engine) noexcept;
 
 	std::expected<std::string, std::string> GetCommand(size_t target_index) noexcept;
 

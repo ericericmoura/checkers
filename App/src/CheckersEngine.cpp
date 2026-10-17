@@ -120,7 +120,7 @@ std::expected<Bitboard, std::string> CheckersEngine::GetMoves(size_t at) const n
 		? move_generator_.GetMovementsForPawn (at, side.value())
 		: move_generator_.GetMovementsForQueen(at, bb_manager_.GetBoard(enemy_side), bb_manager_.GetBoard(side.value()));
 
-	return moves;
+	return moves & ~bb_manager_.GetBoard(side.value());
 }
 
 std::expected<Bitboard, std::string> CheckersEngine::GetCaptures(size_t at) const noexcept
@@ -145,6 +145,11 @@ std::expected<Bitboard, std::string> CheckersEngine::GetCaptures(size_t at) cons
 		: move_generator_.GetCapturesForQueen(at, enemies, allies);
 
 	return captures;
+}
+
+std::optional<Sides> CheckersEngine::GetSideByIndex(size_t at)
+{
+	return bb_manager_.GetSideByIndex(at);
 }
 
 Bitboard CheckersEngine::GetCaptures() const noexcept

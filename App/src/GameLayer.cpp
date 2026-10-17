@@ -63,70 +63,16 @@ void GameLayer::HandleEvent(sf::Event event)
 		{
 			hud_.HideErrorText();
 
-			const auto world_pos = core::Engine::Get().GetWindow().mapPixelToCoords(mouse_event->position, camera_);
+			const auto world_pos   = core::Engine::Get().GetWindow().mapPixelToCoords(mouse_event->position, camera_);
 			const auto board_index = position_mapping::WorldPositionToBitboardIndex(world_pos);
+
 			if (!checkers_input_manager_.IsIndexSelected())
 			{
-				if (!checkers_engine_.IsIndexOccupied(board_index))
-				{
-					core::debugging::LogError("Invalid selection: there's no piece at index {}", board_index);
-					hud_.UpdateCurrentErrorText("Invalid selection: there's no piece at that square.");
-					return;
-				}
-				checkers_input_manager_.SelectIndex(board_index);
-
-				const auto moves = checkers_input_manager_.GetMovementsForSelectedIndex(checkers_engine_);
-				if (!moves)
-				{
-					hud_.UpdateCurrentErrorText(moves.error());
-					core::debugging::LogError("Failed to get moves for selected index: {}", moves.error());
-					return;
-				}
-				board_indicators_renderer_.UpdateMoves(
-					board_renderer_.getPosition(),
-					moves.value()
-				);				
+				SelectBoardIndex(board_index);
 				return;
 			}
 
-			if (auto index = checkers_input_manager_.GetSelectedIndex(); index.has_value() && index.value() == board_index)
-			{				
-				return;
-			}
-
-			const auto movement_result = checkers_input_manager_.MoveSelectedIndexTo(checkers_engine_, board_index);
-			checkers_input_manager_.DeselectIndex();
-			board_indicators_renderer_.ClearMoves();
-
-			// UPDATE CAPTURES
-			board_indicators_renderer_.ClearCaptures();
-			const auto captures = checkers_input_manager_.GetCaptures(checkers_engine_);
-			if (captures.bits_ > 0)
-			{
-				board_indicators_renderer_.UpdateCaptures(
-					board_renderer_.getPosition(),
-					captures
-				);
-			}
-			// END UPDATE CAPTURES
-
-			if (!movement_result)
-			{
-				hud_.UpdateCurrentErrorText(movement_result.error());
-				core::debugging::LogError("Failed to move piece: {}", movement_result.error());
-				return;
-			}
-			pieces_renderer_.Update(
-				rendering::BoardRenderer::GetBoardSize(),
-				board_renderer_.getPosition(),
-				checkers_engine_.GetBoard(Sides::kWhite, Pieces::kPawn),
-				checkers_engine_.GetBoard(Sides::kWhite, Pieces::kQueen),
-				checkers_engine_.GetBoard(Sides::kBlack, Pieces::kPawn),
-				checkers_engine_.GetBoard(Sides::kBlack, Pieces::kQueen)
-			);
-
-			hud_.UpdateCurrentTeamText(checkers_engine_.GetCurrentTeam());
-			hud_.HideErrorText();
+			MoveSelectedIndexTo(board_index);
 		}
 		else if (mouse_event->button == sf::Mouse::Button::Right)
 		{
@@ -143,6 +89,92 @@ void GameLayer::draw(sf::RenderTarget & target, sf::RenderStates states) const
 	target.draw(pieces_renderer_, states);
 	target.draw(board_indicators_renderer_, states);
 	target.draw(hud_, states);
+}
+
+void GameLayer::DeselectBoardIndex()
+{
+	checkers_input_manager_.DeselectIndex();
+	board_indicators_renderer_.ClearMoves();
+}
+
+void GameLayer::SelectBoardIndex(size_t index)
+{	
+	const auto result = checkers_input_manager_.SelectIndex(index, checkers_engine_.IsIndexOccupied(index));
+	if (!result)
+	{
+		hud_.UpdateCurrentErrorText(result.error());
+		return;
+	}
+	const auto moves = checkers_engine_.GetMoves(index);
+	if (moves == 0)
+	{
+		hud_.UpdateCurrentErrorText("Invalid selection: no available moves for that piece.");
+		checkers_input_manager_.DeselectIndex();
+		return;
+	}
+	board_indicators_renderer_.UpdateMoves(
+		board_renderer_.getPosition(),
+		moves.value()
+	);
+}
+
+void GameLayer::MoveSelectedIndexTo(size_t index)
+{
+	const auto selected_index = checkers_input_manager_.GetSelectedIndex();
+	const auto selected_side  = checkers_engine_.GetSideByIndex(selected_index.value());
+
+	bool is_selecting_same_piece_twice = selected_index.has_value() && selected_index.value() == index;
+	if (is_selecting_same_piece_twice)
+	{
+		return;
+	}
+
+	bool is_selecting_other_piece = checkers_engine_.IsIndexOccupied(index) &&
+		checkers_engine_.GetSideByIndex(index) == selected_side;
+	if (is_selecting_other_piece)
+	{
+		DeselectBoardIndex();
+		SelectBoardIndex(index);
+		return;
+	}
+
+	const auto movement_result = checkers_input_manager_.MoveSelectedIndexTo(checkers_engine_, index);
+	DeselectBoardIndex();
+
+	if (!movement_result)
+	{
+		hud_.UpdateCurrentErrorText(movement_result.error());
+		core::debugging::LogError("Failed to move piece: {}", movement_result.error());
+		return;
+	}
+
+	// UPDATE CAPTURES
+	board_indicators_renderer_.ClearCaptures();
+	const auto captures = checkers_engine_.GetCaptures();
+	if (captures.bits_ > 0)
+	{
+		board_indicators_renderer_.UpdateCaptures(
+			board_renderer_.getPosition(),
+			captures
+		);
+	}
+
+	UpdateGraphics();
+}
+
+void GameLayer::UpdateGraphics()
+{
+	pieces_renderer_.Update(
+		rendering::BoardRenderer::GetBoardSize(),
+		board_renderer_.getPosition(),
+		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kPawn),
+		checkers_engine_.GetBoard(Sides::kWhite, Pieces::kQueen),
+		checkers_engine_.GetBoard(Sides::kBlack, Pieces::kPawn),
+		checkers_engine_.GetBoard(Sides::kBlack, Pieces::kQueen)
+	);
+
+	hud_.UpdateCurrentTeamText(checkers_engine_.GetCurrentTeam());
+	hud_.HideErrorText();
 }
 
 } // namespace checkers

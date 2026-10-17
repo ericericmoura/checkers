@@ -40,6 +40,11 @@ private:
 	CheckersEngine checkers_engine_{};
 
 	CheckersHUD hud_{};
+	
+	void DeselectBoardIndex();
+	void SelectBoardIndex(size_t index);
+	void MoveSelectedIndexTo(size_t index);
+	void UpdateGraphics();
 };
 
 } // namespace checkers
